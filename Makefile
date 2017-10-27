@@ -36,19 +36,15 @@ wp2: project
 
 wp3: project
 
-$(USER).iso: kernel $(ROOTBOOT)/large-file-padding
+$(USER).iso: kernel
 	cp kernel $(ROOTBOOT)/kernel/kernel
 	mkisofs -r -no-emul-boot -input-charset utf-8 -b boot/cdboot -o $@ $(ROOTFS)/
 
 $(USER).img: $(USER).iso
-	rm -f $@
-	mkfs.vfat -n SBUNIX -I -C $@ 65536
+	mkfs.vfat -n SBUNIX -I -C $@ 16384
 	syslinux -i $@
 	mcopy -i $@ /usr/lib/syslinux/memdisk $(ROOTBOOT)/syslinux.cfg ::
 	mcopy -i $@ $(USER).iso ::sbunix.iso
-
-$(ROOTBOOT)/large-file-padding:
-	dd if=/dev/zero of=$(ROOTBOOT)/large-file-padding seek=30 bs=1M count=0
 
 $(USER)-data.img:
 	qemu-img create -f raw $@ 16M
@@ -98,5 +94,5 @@ clean:
 
 SUBMITTO=/submit
 submit: clean $(USER)-data.img
-	tar -czvf $(USER).tgz --exclude=.gitkeep --exclude=.*.sw? --exclude=*~ --ignore-failed-read LICENSE README Makefile Makefile.config sys bin crt libc include $(ROOTFS) $(USER)-data.img
+	tar -czvf $(USER).tgz --exclude=.gitkeep --exclude=.*.sw? --exclude=*~ LICENSE README Makefile Makefile.config sys bin crt libc include $(ROOTFS) $(USER)-data.img
 	mv -v $(USER).tgz $(SUBMITTO)/$(USER)-$(ASSIGNMENT)=`date +%F=%T`.tgz
