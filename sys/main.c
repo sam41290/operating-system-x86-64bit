@@ -1,3 +1,4 @@
+//stealth
 //private repo
 #include <sys/defs.h>
 #include <sys/gdt.h>
