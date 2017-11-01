@@ -97,10 +97,10 @@ void map_virtual_to_physical(uint64_t vadd, uint64_t padd){
 
 void map_virtual_to_physical2(uint64_t vadd, uint64_t padd){
 	// uint64_t p1_index = get_pml4_index(vadd);
-	uint64_t p1_index = vadd << 16 >> 55 << 3;
-	uint64_t p2_index = vadd << 16 >> 46 << 3;
-	uint64_t p3_index = vadd << 16 >> 37 << 3;
-	uint64_t p4_index = vadd << 16 >> 28 << 3;
+	uint64_t p1_index = vadd << 16 >> 55 << 3;			//Take 39-47 bits and multiply 8 (it will go as offset to self reference)
+	uint64_t p2_index = vadd << 16 >> 46 << 3;			//Take 30-38 bits and multiply 8 (it will go as offset to self reference)
+	uint64_t p3_index = vadd << 16 >> 37 << 3;			//Take 21-29 bits and multiply 8 (it will go as offset to self reference)
+	uint64_t p4_index = vadd << 16 >> 28 << 3;			//Take 12-20 bits and multiply 8 (it will go as offset to self reference)
 	// uint64_t p2_index = get_directoryptr_index(vadd);
 	// uint64_t p3_index = get_directory_index(vadd);
 	// uint64_t p4_index = get_pagetable_index(vadd);
@@ -110,20 +110,13 @@ void map_virtual_to_physical2(uint64_t vadd, uint64_t padd){
 	// kprintf("p3=%d\n",p3_index);
 	// kprintf("p4=%d\n",p4_index);
 
-	// kprintf("pml4_e %p", p1_index);
-
-	uint64_t self = p1_index | 0xFFFFFF7FBFDFE000UL;
-	// uint64_t self = 0xFFFFFF7FBFDFEFF8UL;
-	// kprintf("self %p", self);
-	uint64_t* pml4_e = (uint64_t*)self;
+	uint64_t* pml4_e = (uint64_t*)(p1_index | 0xFFFFFF7FBFDFE000);
 	kprintf("pml4_e %p", *pml4_e);
 
-	uint64_t* pdpe_e = (uint64_t*)(p2_index | 0xFFFFFF7FBFC00000UL);
-	uint64_t* pd_e = (uint64_t*)(p3_index | 0xFFFFFF7F80000000UL);
-	uint64_t* pt_e = (uint64_t*)(p4_index | 0xFFFFFF0000000000UL);
-	kprintf("address pdpe_e %p\n", pdpe_e);
-	// kprintf("address pd_e %p\n", pd_e);
-	// kprintf("address pt_e %p\n", pt_e);
+	uint64_t* pdpe_e = (uint64_t*)(p2_index | 0xFFFFFF7FBFC00000);
+	uint64_t* pd_e = (uint64_t*)(p3_index | 0xFFFFFF7F80000000);
+	uint64_t* pt_e = (uint64_t*)(p4_index | 0xFFFFFF0000000000);
+	// kprintf("address pdpe_e %p\n", pdpe_e);
 
 	if (*pml4_e & 0x1)
 	{
@@ -136,7 +129,7 @@ void map_virtual_to_physical2(uint64_t vadd, uint64_t padd){
 				kprintf("pt_e %p\n", *pt_e);
 				if (*pt_e & 0x1)
 				{
-					kprintf("Mapped\n");
+					kprintf("This location is already Mapped\n");
 				}
 				else
 				{
@@ -145,31 +138,27 @@ void map_virtual_to_physical2(uint64_t vadd, uint64_t padd){
 			}
 			else
 			{
-				kprintf("Creating pte_table\n");
+				// kprintf("Creating pte_table\n");
 				*pd_e = p_allocblock() | 7;
 				*pt_e = padd | 7;
 			}
 		}
 		else
 		{
-			kprintf("Create 2 new tables\n");
+			// kprintf("Create 2 new tables\n");
 			*pdpe_e = p_allocblock() | 7;
 			*pd_e = p_allocblock() | 7;
 			*pt_e = padd | 7;		
-			// kprintf("pd_t : %p pte_t : %p\n", pd_t, pte_t);					
 		}
 	}
 	else
 	{
-		kprintf("Create 3 new tables\n");
+		// kprintf("Create 3 new tables\n");
 		*pml4_e = p_allocblock() | 7;
 		*pdpe_e = p_allocblock() | 7;
 		*pd_e = p_allocblock() | 7;
 		*pt_e = padd | 7;		
 	}
-
-	// pte_t[p4_index] = padd | 7;
-	// kprintf("index of pte %p", pte_t+p4_index);
 }
 
 void init_paging(uint64_t vadd, uint64_t physbase){
