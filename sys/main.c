@@ -52,11 +52,6 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
   kprintf("Display Enabled\n");
 
-  for (int i = 0; i < 20; ++i)
-  {
-    kprintf("Hi\n");
-  }
-
   while(1){
     //Dont return from start
   }
