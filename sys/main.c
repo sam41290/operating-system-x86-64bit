@@ -10,6 +10,7 @@
 #include <sys/idt.h>
 #include <sys/paging.h>
 #include <sys/phymem.h>
+#include <sys/kmalloc.h>
 //#include <sys/scanPCI.h>
 //#include <sys/paging.h>
 
@@ -52,6 +53,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
   kprintf("Display Enabled\n");
 
+  #include <test.h>
+  KMALLOC_TEST();
   while(1){
     //Dont return from start
   }
