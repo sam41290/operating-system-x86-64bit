@@ -8,6 +8,8 @@
 #include <sys/time.h>
 #include <sys/Utils.h>
 #include <sys/idt.h>
+#include <sys/paging.h>
+#include <sys/phymem.h>
 //#include <sys/scanPCI.h>
 //#include <sys/paging.h>
 
@@ -15,15 +17,6 @@
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
-extern char *video;
-extern char *videostart;
-
-struct freelist {
-uint64_t base;
-struct freelist *next;
-}__attribute__((packed));
-
-
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
@@ -33,141 +26,36 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
   }__attribute__((packed)) *smap;
   while(modulep[0] != 0x9001) modulep += modulep[1]+2;
 
+    struct smap_t* max_smap = NULL;max_smap->length=0;
+    for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
+      if (smap->type == 1 /* memory */ && smap->length != 0) {
+        kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
+        //uint64_t pagenum=smap->length/4096;
 
-struct freelist *memstart=(struct freelist *)((uint64_t)&kernmem - (uint64_t)physbase 
-						+ (uint64_t)physfree + 4096);
-
-struct freelist *memend=NULL;
-memstart->next=NULL;
-
- for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
-    if (smap->type == 1 /* memory */ && smap->length != 0) {
-      kprintf("Available Physical Memory [%p-%p]\n", smap->base, smap->base + smap->length);
-      //uint64_t pagenum=smap->length/4096;
-
-
-
-	uint64_t base=smap->base;
-	uint64_t length=smap->length;
-	uint64_t last_addr=base + length;
-	while (base < last_addr)
-	{
-        	if(base % 4096 != 0)
-		{
-			uint64_t mod = base % 4096;
-                	base=(base-mod) + 4096;
-			continue;
-		}
-        	if (memend==NULL)
-        	{
-                	memstart->base=base;
-			memstart->next=NULL;
-                	memend=memstart;
-        	}
-        	else
-        	{
-			memend->next=(struct freelist *)(memend + 1);
-                	(memend->next)->base=base;
-			(memend->next)->next=NULL;
-                	memend=memend->next;
-        	}
-        	base = base + 4096;
-	}
+        //Currently using the biggest chunk as free memory
+        if (max_smap->length < smap->length)
+        {
+            max_smap->base = smap->base;
+            max_smap->length = smap->length;
+        }
     }
   }
+
+  kprintf("max_smap in [%p:%p]\n", max_smap->base+0x300000, max_smap->length);
+
+  p_init(max_smap->base + 0x250000 , max_smap->length + max_smap->length, (uint64_t)physfree);
+
   kprintf("physfree %p\n", (uint64_t)physfree);
   kprintf("tarfs in [%p:%p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
 
-kprintf("number of pages %p\n",memend - memstart);
-kprintf("page base: %p\n",memstart->base);
-kprintf("page base: %p\n",memstart->next->base);
-kprintf("page base: %p\n",(memend - 1)->base);
-kprintf("page base: %p\n",memend->base);
-//  struct freelist *tmp=memstart;
-//  while (tmp != NULL)	{
-//	kprintf("page base: %p\n",tmp->base);
-//	tmp=tmp->next;
-//	}
+  init_paging((uint64_t)&kernmem, (uint64_t)physbase);
 
-uint64_t *page_directory1=(uint64_t *)((uint64_t)&kernmem - (uint64_t)physbase
-                                                + (uint64_t)physfree + 4096 * 256);
-uint64_t *page_directory2=(uint64_t *)(uint64_t)(page_directory1 + 4096 * 9);
+  kprintf("Display Enabled\n");
 
-uint64_t *page_directory3=(uint64_t *)(uint64_t)(page_directory2 + 4096 * 9);
-
-uint64_t *kernelpage=(uint64_t *)(uint64_t)(page_directory3 + 4096 * 9);
-                                           
-uint64_t kernstart=(uint64_t)physbase;
-uint64_t kernend=((uint64_t)(kernelpage) + 4096 * 9) - ((uint64_t)&kernmem - (uint64_t)physbase);
-kprintf("kernel start %p\n",kernstart);
-kprintf("kernel end%p\n",kernend);
-
-uint64_t vadd=(uint64_t)&kernmem;
-
-uint64_t p1_index = (vadd << 16) >> (9 + 9 + 9 + 12 + 16);
-uint64_t p2_index = (vadd << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
-uint64_t p3_index = (vadd << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
-uint64_t p4_index = (vadd << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
-
-kprintf("%p\n",p1_index);
-kprintf("%p\n",p2_index);
-kprintf("%p\n",p3_index);
-kprintf("%p\n",p4_index);
-
-
-page_directory1[p1_index]=(((uint64_t)page_directory2) - ((uint64_t)&kernmem - (uint64_t)physbase)) | 7;
-page_directory2[p2_index]=(((uint64_t)page_directory3) - ((uint64_t)&kernmem - (uint64_t)physbase)) | 7;
-page_directory3[p3_index]=(((uint64_t)kernelpage) - ((uint64_t)&kernmem - (uint64_t)physbase)) | 7;
-int j=0;
-
-while (kernstart <= kernend)
-{
-	kernelpage[p4_index + j]=kernstart | 3;
-	j++;
-	kernstart=kernstart + 4096;
-}
-
-page_directory1[510]=(((uint64_t)page_directory1) - ((uint64_t)&kernmem - (uint64_t)physbase)) | 7;
-
-
-
-
-kprintf("%p\n",j);
-
-kprintf("%p\n",kernelpage[0x1fc]);
-
-uint64_t cr3 = (((uint64_t)page_directory1) - ((uint64_t)&kernmem - (uint64_t)physbase));
-
-kprintf("cr3 %p\n",cr3);
-
-char *cur_disp=getcurrdisp();
-
-kernelpage[p4_index + j]=((uint64_t)cur_disp & 0xFFFFFFFFFF000) | 5;
-kprintf("%p\n",kernelpage[0x1fc]);
-
-
-kprintf("kernend: %p\n",kernend + ((uint64_t)&kernmem - (uint64_t)physbase));
-
-__asm__(
-"movq %0,%%rax;\n"
-"movq %%rax,%%cr3;\n"
-:
-:"g"(cr3)
-);
-(video)=(char *)(0xffffffff803fc000 | ((uint64_t)video & 0xfff));
-
-(videostart)=(char *)(0xffffffff803fc000);
-
-
-//disp++;
-
-//setcurrdisp(disp);
-
-kprintf("Display Enabled\n");
-
-//char a='a';
-//kprintf("%c %p\n",a,&a);
-  //checkAllBuses();
+  for (int i = 0; i < 20; ++i)
+  {
+    kprintf("Hi\n");
+  }
 
   while(1){
     //Dont return from start
@@ -195,7 +83,7 @@ void boot(void)
    MakeKeyboardMapping();
   // outb(0x21,0xfc);                      //Disable all interrupts in master PIC except IRQ0 and IRQ1
   // outb(0xa1,0xff);                      //Disable all interrupts in slave PIC
-   __asm__("sti;");
+   // __asm__("sti;");
  
 
 
