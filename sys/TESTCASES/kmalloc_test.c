@@ -1,22 +1,23 @@
 #include <sys/kprintf.h>
 #include <sys/kmalloc.h>
-
+extern uint64_t virtualMemoryAvailable;
 
 void KMALLOC_TEST(){
 
-
-  uint64_t* intmem = kmalloc(200*sizeof(int));
-  for (int i = 0; i < 200; ++i)
+  kprintf("Available virtual mem %p\n", virtualMemoryAvailable);
+  kprintf("size of int %d\n", sizeof(int));
+  uint64_t* intmem = kmalloc(4096*2);
+  for (int i = 0; i < 512+512; ++i)
   {
     intmem[i] = i;
   }
 
-  for (int i = 0; i < 200; ++i)
+  for (int i = 0; i < 512+512; ++i)
   {
     kprintf("%d ", intmem[i]);
   }
 
-  kprintf("\n");
+  kprintf("Available virtual mem %p\n", virtualMemoryAvailable);
 
   uint64_t* charmem = kmalloc(26*sizeof(char));
   for (int i = 0; i < 26; ++i)

@@ -1,5 +1,6 @@
 #include <sys/phymem.h>
 #include <sys/kprintf.h>
+#include <sys/kmalloc.h>
 static struct freelist p_list[50000];
 static int head_freelist = 0;
 static uint64_t PHYSFREEBASE;
@@ -14,6 +15,7 @@ void p_init(uint64_t startPhysFree, uint64_t endPhysFree, uint64_t physfree){
 	PHYSFREEBASE = startPhysFree;
 	while(startPhysFree < endPhysFree){
 		//TODO : memset all to 0
+		memset((void*)startPhysFree, 0, PAGE_SIZE);
 		p_list[freeblockcount].next = freeblockcount+1;
 		startPhysFree += 0x1000;
 		freeblockcount++;

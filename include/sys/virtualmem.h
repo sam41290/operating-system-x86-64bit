@@ -7,6 +7,6 @@
 #include <sys/phymem.h>
 #include <sys/kprintf.h>
 
-uint64_t virtualMemoryAvailable = KERNBASE;
+uint64_t virtualMemoryAvailable = 0x0;
 
 #endif

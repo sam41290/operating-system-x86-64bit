@@ -6,12 +6,13 @@ void isr_wrapper();
 void timer_fptr();
 void key_fptr();
 
-// void (*fun_ptr)()=&isr_wrapper;
+void (*fun_ptr)()=&isr_wrapper;
 void (*keyboard)()=&key_fptr;
 void (*timer)()=&timer_fptr;
 
 void init_idt()
 {
+
 
 
 	//TIMER

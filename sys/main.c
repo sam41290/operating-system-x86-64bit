@@ -11,6 +11,8 @@
 #include <sys/paging.h>
 #include <sys/phymem.h>
 #include <sys/kmalloc.h>
+#include <sys/process.h>
+#include <test.h>
 //#include <sys/scanPCI.h>
 //#include <sys/paging.h>
 
@@ -18,6 +20,7 @@
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
 uint32_t* loader_stack;
 extern char kernmem, physbase;
+
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
@@ -42,6 +45,8 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
     }
   }
 
+
+
   kprintf("max_smap in [%p:%p]\n", max_smap->base+0x300000, max_smap->length);
 
   p_init(max_smap->base + 0x250000 , max_smap->length + max_smap->length, (uint64_t)physfree);
@@ -51,10 +56,16 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
   init_paging((uint64_t)&kernmem, (uint64_t)physbase);
 
-  kprintf("Display Enabled\n");
+  __asm__ __volatile__("movq %0, %%rsp" : :"a"(&initial_stack[INITIAL_STACK_SIZE]));
 
-  #include <test.h>
-  KMALLOC_TEST();
+  //Uncomment this
+  create_idle_task();
+  test_schedule();
+  schedule_idle_task();
+
+  // kprintf("Display Enabled\n");
+
+  // KMALLOC_TEST();
   while(1){
     //Dont return from start
   }
@@ -74,14 +85,14 @@ void boot(void)
     :"r"(&initial_stack[INITIAL_STACK_SIZE])
   );
   
-   init_gdt();
-   init_idt();
-   PIC_remap((int)0x20,(int)0x28);				//In protected mode, we need to set the master PIC's offset to 0x20 and the slave's to 0x28
-   init_pit();									          // Reference : http://wiki.osdev.org/PIC
-   MakeKeyboardMapping();
+  //  init_gdt();
+  //  init_idt();
+  //  PIC_remap((int)0x20,(int)0x28);				//In protected mode, we need to set the master PIC's offset to 0x20 and the slave's to 0x28
+  //  init_pit();									          // Reference : http://wiki.osdev.org/PIC
+  //  MakeKeyboardMapping();
   // outb(0x21,0xfc);                      //Disable all interrupts in master PIC except IRQ0 and IRQ1
   // outb(0xa1,0xff);                      //Disable all interrupts in slave PIC
-   // __asm__("sti;");
+  //  __asm__("sti;");
  
 
 
