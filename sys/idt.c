@@ -9,7 +9,7 @@ void page_fault(void);
 void page_fault2(void);
 void _syscall();
 
-// void (*fun_ptr)()=&isr_wrapper;
+void (*fun_ptr)()=&isr_wrapper;
 void (*keyboard)()=&key_fptr;
 void (*timer)()=&timer_fptr;
 void (*pagefault)()=&page_fault;
@@ -39,6 +39,7 @@ void init_idt()
         IDT[14].type_attr=(uint8_t)0x8E;
         IDT[14].selector=8;
     }
+
 
 
 	//TIMER
