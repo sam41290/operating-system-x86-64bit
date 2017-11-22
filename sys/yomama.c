@@ -1,9 +1,25 @@
 #include <sys/kprintf.h>
 #include <sys/Utils.h>
+#include<sys/phy_mem_manager.h>
+#include<sys/paging.h>
 
 
+extern void (*p[1])(void);
 
-
+void sys_call()
+{
+	uint64_t syscallnum;
+	
+	
+	__asm__(
+	"movq %%rax,%0;\n"
+	//"movq %%rcx,%1;\n"
+	:"=g"(syscallnum)
+	);
+	if(syscallnum==0)
+		p[syscallnum]();
+	return;
+}
 
 
 void yomama(void)
@@ -28,6 +44,52 @@ void timemama(void)
 
 		flushtime(s);
 	}
+}
+
+int ctr=0;
+
+void pagemama(void)
+{
+	//ctr ++;
+	
+	//kprintf("page fault\n");
+
+	uint64_t addr;
+
+	__asm__(
+	"movq %%cr2,%0;\n"
+	:"=g"(addr)
+	:
+	);
+
+	if (ctr > 0)
+	{
+		kprintf("address: %p\n",addr);
+	    while(1);
+	}
+    //kprintf("address: %p\n",addr);
+	if(map_phyaddr(addr)==-1)
+	{
+		kprintf("\ncan not allocate physical page\n");
+		while(1);
+	}
+	//else kprintf("\npage allocated\n");
+	
+	
+}
+
+void protection_fault()
+{
+     kprintf("Exception: General Protection Fault\n");
+     uint64_t cr2;
+     __asm__(
+         "movq %%cr2, %0"
+         :"=g"(cr2)
+         :
+         :"memory"
+     );
+	 kprintf("address: %p\n",cr2);
+     while(1);
 }
 
 void keymama(void)

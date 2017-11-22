@@ -234,7 +234,7 @@ void kprintf(const char *fmt, ...)
             c = (char) va_arg(ap, int);
             flushchar(c);
             fmt++;
-    	}
+      	}
     	else if (ch == '%' && nextch == 'd')
     	{
             d = va_arg(ap, int);

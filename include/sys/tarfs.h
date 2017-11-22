@@ -1,6 +1,8 @@
+
+
 #ifndef _TARFS_H
 #define _TARFS_H
-
+#include<sys/task_manager.h>
 extern char _binary_tarfs_start;
 extern char _binary_tarfs_end;
 
@@ -24,4 +26,35 @@ struct posix_header_ustar {
   char pad[12];
 };
 
+struct elf_header
+{
+  unsigned char e_ident[16]; /* ELF identification */
+  char e_type[2]; /* Object file type */
+  char e_machine[2]; /* Machine type */
+  char e_version[4]; /* Object file version */
+  uint64_t e_entry; /* Entry point address */
+  char e_phoff[8]; /* Program header offset */
+  char e_shoff[8]; /* Section header offset */
+  char e_flags[4]; /* Processor-specific flags */
+  char e_ehsize[2]; /* ELF header size */
+  char e_phentsize[2]; /* Size of program header entry */
+  char e_phnum[2]; /* Number of program header entries */
+  char e_shentsize[2]; /* Size of section header entry */
+  char e_shnum[2]; /* Number of section header entries */
+  char e_shstrndx[2]; /* Section name string table index */
+};
+
+struct pheader
+{
+  char p_type[4]; /* Type of segment */
+  char p_flags[4]; /* Segment attributes */
+  uint64_t p_offset; /* Offset in file */
+  uint64_t p_vaddr; /* Virtual address in memory */
+  char p_paddr[8]; /* Reserved */
+  uint64_t p_filesz; /* Size of segment in file */
+  uint64_t p_memsz; /* Size of segment in memory */
+  char p_align[8]; /* Alignment of segment */
+};
+
+void scan_tarfs(PCB *proc);
 #endif
