@@ -2,14 +2,15 @@
 #include <stdarg.h>
 #include <sys/defs.h>
 
-char *video = (char*)0xFFFFFFFF800B8000;
+char *video = (char*)0xb8000;
 
-char *videostart=(char*)0xFFFFFFFF800B8000;
+char *videostart=(char*)0xb8000;
 
 static long data_written = 0;
 
 char *getcurrdisp()
 {
+kprintf("returning video: %p",video);
 return video;
 }
 
@@ -72,21 +73,14 @@ void checkForScroll(){
 
 	if (data_written >= 80*24)		//Last line for clock and keypress
 	{
-		int shift = 160*12;
-		for(char* temp = (char*)videostart; temp < (char*)videostart+160*12;){
-			*temp = *(temp+shift);
-			temp++;
-			*temp++ = 7;
-		}		
-
 		//Clear Screen
-		for(char* temp = (char*)videostart+160*12; temp < (char*)videostart+160*24;){
+		for(char* temp = (char*)video; temp < (char*)video+160*24;){
 			*temp++ = ' ';
 			*temp++ = 7;
 		}		
 
-		video = (char*)videostart+160*12;
-		data_written = 80*12;
+		video = (char*)video;
+		data_written = 0;
 	}
 
 	return;
