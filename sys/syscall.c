@@ -65,6 +65,8 @@ uint64_t syscall_print(gpr_t reg)
 	// );
 	//kprintf("123::%p\n",printval);
 	char *print=(char *)printval;
+	//kprintf("123::%p\n",printval);
+	//kprintf("user stack: %p re-entry point: %p rax:\n",reg.usersp,reg.rip);	
 	kprintf("%s",print);
 
 	return 0;

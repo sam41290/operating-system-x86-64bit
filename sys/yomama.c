@@ -4,8 +4,6 @@
 #include<sys/paging.h>
 #include <sys/virt_mem.h>
 #include <sys/idt.h>
-
-
 extern uint64_t (*p[200])(gpr_t reg);
 
 void sys_call()

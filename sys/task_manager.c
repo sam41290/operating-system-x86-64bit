@@ -1,4 +1,3 @@
-#include<sys/kprintf.h>
 #include<sys/virt_mem.h>
 #include<sys/task_manager.h>
 #include<sys/phy_mem_manager.h>
@@ -6,7 +5,9 @@
 #include<sys/paging.h>
 #include<sys/tarfs.h>
 #include<sys/kmalloc.h>
+#include<sys/defs.h>
 #define PROC_SIZE 10
+
 
 PCB *proc_start;
 PCB *proc_end;
@@ -289,7 +290,6 @@ void init_proc()
 {
 	init_kstack();
 	proc_start = create_new_process();
-
 	proc_end=proc_start;
 	
 	proc_end->cr3=mappageTable();
@@ -307,9 +307,8 @@ void init_proc()
 	global_pid++;
 	proc_end->next = create_new_process();
 	proc_end->state=0;
-	
-	
 	scan_tarfs(proc_end);
+	//proc_end->entry_point=(uint64_t)test;
 	proc_end->u_stack=init_stack();
 	
 	create_kstack(proc_end);
@@ -326,10 +325,11 @@ void init_proc()
 	active->state=1;
 
 	kprintf("user stack: %p\n",active->u_stack);
+	
 	set_tss_rsp((void *)active->k_stack);
 	
 	
-     __asm__( 
+     __asm__(
      "pushq $0x23;\n"
      "pushq %0;\n"
      "pushf;\n"
@@ -349,7 +349,7 @@ void init_proc()
 	:
 	:"g"(active->u_stack),"g"(active->entry_point)
 	);
-	*/
 	
+	*/
 	return;
 }

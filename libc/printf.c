@@ -48,7 +48,7 @@ void printfflushNewLine(){
 	
 }
 
-void printfflush()
+int printfflush()
 {
 	uint64_t arg=(uint64_t)(&args);
 	
@@ -64,23 +64,14 @@ void printfflush()
 	:
 	:"g"(syscallnumber),"g"(arg)
 	);
-	/*
+	uint64_t ret=0;
 	
-	int i=0;
-    while( args[i] != '\0' && args[i] != '\n')
-    {
-		//kprintf("%s",args);
-        printfflushchar(args[i]);
-		i++;
-		kprintf("3");
-		kprintf("soumya");
-    }
+	__asm__(
+	"movq %%rax,%0;\n"
+	:"=g"(ret)
+	);
 	
-    if (args[i] == '\n')
-    {
- 		printfflushNewLine();  	
-    }*/
-	return;
+	return ret;
 }
 
 
@@ -170,7 +161,7 @@ return ctr;
 
 
 
-void printf(const char *pfmt, ...)
+uint64_t printf(const char *pfmt, ...)
 {
 	va_list pap;
     int d;
@@ -244,7 +235,8 @@ void printf(const char *pfmt, ...)
     }
     va_end(pap);
 	args[i]='\0';
-	printfflush();
+	int ret=printfflush();
+	return ret;
+	
 	//kprintf("4");
-	return;
 }

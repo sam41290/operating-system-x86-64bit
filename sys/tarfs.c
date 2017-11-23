@@ -106,6 +106,8 @@ void read_elf(char *elfaddr,PCB *proc)
     // kprintf("num header %d", elfhead->e_phnum[0]);
 	char *phead=(char *)(elfaddr + off);
 	uint64_t head_count= (uint64_t)(*(elfhead->e_phnum)) + 10 * (uint64_t)(*((elfhead->e_phnum) + 1));
+	kprintf("head count: %d\n",head_count);
+	
 	uint64_t head_size=((uint64_t)(*(elfhead->e_phentsize)))+
 						256*((uint64_t)(*((elfhead->e_phentsize)+1)));
 

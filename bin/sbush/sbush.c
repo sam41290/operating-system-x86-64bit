@@ -33,9 +33,14 @@ void dummysyscall(){
 	return;
 }
 int main(int argc, char *argv[], char *envp[]) {
+
 	int a=10;
 	// printf("sbush> %d\n",a);
 	a=a+1;
+
+	a=printf("sbush> %d\n",a);
+	//a=a+1;
+
 	printf("hello world!!! %d\n",a);
 
 	// dummysyscall();
