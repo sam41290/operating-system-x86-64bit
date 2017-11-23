@@ -5,12 +5,13 @@
 #include<sys/gdt.h>
 #include<sys/paging.h>
 #include<sys/tarfs.h>
+#include<sys/kmalloc.h>
 #define PROC_SIZE 10
 
 PCB *proc_start;
 PCB *proc_end;
 
-PCB *active;
+PCB *active = NULL;
 
 uint64_t kernbase;
 
@@ -24,6 +25,13 @@ uint64_t global_pid=0;
 
 extern int ctr;
 
+extern uint64_t kern_VA;
+
+extern uint8_t initial_stack[4096];
+
+uint64_t kstackdescriptor[50];
+
+uint64_t kstackbase;
 
 void _x86_64_asm_ltr(uint64_t tss_idx);
 
@@ -177,9 +185,110 @@ void change_ptable(uint64_t addr)
 	return;
 }
 
+void init_kstack()
+{
+	//kprintf("\nhere\n");
+	
+	for(int i=0;i<50;i++)
+		kstackdescriptor[i]=1;
+	kstackbase=(uint64_t)((kern_VA + 4096) & 0xFFFFFFFFFFFFF000);
+	kern_VA = kern_VA + (4096 * 51);
+	//kprintf("\nhere\n");
+	//while(1);
+}
+
+void create_kstack(PCB *proc)
+{
+	int i;
+	for(i=0;i<50;i++)
+	{
+		if(kstackdescriptor[i]==1)
+			break;
+	}
+	if(i==50)
+	{
+		kprintf("can not find free kernel stack\n");
+		while(1);
+	}
+	kstackdescriptor[i]=0;
+	uint64_t top=kstackbase + (4096 * i);
+	//kprintf("\nfrom init top: %p\n",top);
+	for(i=0;i<=4096;i++)
+	{
+		*((uint8_t *)(top + i))=0;
+		top++;
+	}
+	
+	//kprintf("\nfrom init top: %p\n",top);
+	proc->k_stack=top;
+	proc->k_stackbase=top;
+}
+
+void copy_kstack(PCB *proc)
+{
+	uint64_t kernel_stack=0;
+	
+	__asm__(
+	"movq %%rsp,%0;\n"
+	:"=g"(kernel_stack)
+	:
+	);
+	
+	uint64_t k_base;
+	
+	if(proc->pid==0)
+		k_base=(uint64_t)&initial_stack[4096];
+	else
+		k_base=active->k_stackbase;
+	//kprintf("kernel_stack:%p initial_stack:%p\n",kernel_stack,initial_stack);
+	while (k_base>=kernel_stack)
+	{
+		*((uint8_t *)(proc->k_stack))=*((uint8_t *)k_base);
+		k_base--;
+		proc->k_stack--;
+	}
+	proc->k_stack++;
+	//kprintf("new k stack:%p stack val:%p old val:%p\n",proc->k_stack,*((uint64_t *)proc->k_stack),*((uint64_t *)kernel_stack));
+	//while(1);
+	__asm__(
+	 "movq %0,%%rsp;\n"
+	 :
+	 :"g"(proc->k_stack)
+	 );
+	//while(1);
+}
+
+PCB* create_new_process(){
+	PCB* new_task = (PCB *)kmalloc(sizeof(PCB));
+	new_task->mmstruct.vma_list = NULL;
+	//initialize other PCB members if needed
+	return new_task;
+}
+
+uint64_t fork_proc(PCB *parent)
+{
+	PCB *child;
+	child=(PCB *)kmalloc(sizeof(PCB));
+	child->cr3=parent->cr3;//to be changed later
+	change_ptable(child->cr3);
+	child->pid=global_pid;
+	global_pid++;
+	child->next=(PCB *)kmalloc(sizeof(PCB));
+	child->state=1;
+	child->ppid=parent->pid;
+	child->u_stack=init_stack();
+	create_kstack(child);
+	copy_kstack(child);
+	proc_end=active;
+	proc_end->next=(PCB *)kmalloc(sizeof(PCB));
+	proc_end=proc_end->next;
+	return child->pid;
+}
+
 void init_proc()
 {
-	proc_start=(PCB *)kmalloc(sizeof(PCB));
+	init_kstack();
+	proc_start = create_new_process();
 
 	proc_end=proc_start;
 	
@@ -192,27 +301,24 @@ void init_proc()
 	//kprintf("test: %p\n",proc_end->cr3);
 	//while(1);
 	change_ptable(proc_end->cr3);
-	//kprintf("here\n");
 	
 	
 	proc_end->pid=global_pid;
 	global_pid++;
-	proc_end->next=(PCB *)kmalloc(sizeof(PCB));
+	proc_end->next = create_new_process();
 	proc_end->state=0;
 	
 	
 	scan_tarfs(proc_end);
 	proc_end->u_stack=init_stack();
 	
-	uint64_t kernel_stack=0;
+	create_kstack(proc_end);
 	
-	__asm__(
-	"movq %%rsp,%0;\n"
-	:"=g"(kernel_stack)
-	:
-	);
 	
-	proc_end->k_stack=kernel_stack;
+	
+	copy_kstack(proc_end);
+	//while(1);
+	
 	proc_end=proc_end->next;
 
 	active=proc_start;

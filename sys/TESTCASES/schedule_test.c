@@ -1,3 +1,5 @@
+#if 0
+
 #include <sys/process.h>
 #include <sys/kprintf.h>
 
@@ -21,3 +23,5 @@ void test_schedule(){
 	// 	// schedule(next);
 	// }
 }
+
+#endif

@@ -20,7 +20,7 @@ extern uint64_t u_heapboundary;
 void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t kernend)
 {
 	uint64_t *page_directory1=(uint64_t *)((uint64_t)kernmem - (uint64_t)physbase
-                                                + (uint64_t)physfree + 4096 * 260);
+                                                + (uint64_t)physfree + 4096);
 	uint64_t *page_directory2=(uint64_t *)(uint64_t)(page_directory1 + 4096);
 	
 	uint64_t *page_directory3=(uint64_t *)(uint64_t)(page_directory2 + 4096);
@@ -38,7 +38,13 @@ void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t ke
 	uint64_t p3_index = (vadd << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
 	uint64_t p4_index = (vadd << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
 	
-	
+	for(int i=0;i<512;i++)
+	{
+		page_directory1[i]=0x0;
+		page_directory2[i]=0x0;
+		page_directory3[i]=0x0;
+		kernelpage[i]=0x0;
+	}
 	
 	page_directory1[p1_index]=(((uint64_t)page_directory2) - ((uint64_t)kernmem - (uint64_t)physbase)) | 7;
 	page_directory2[p2_index]=(((uint64_t)page_directory3) - ((uint64_t)kernmem - (uint64_t)physbase)) | 7;
@@ -210,4 +216,94 @@ uint64_t map_phyaddr(uint64_t vadd)
     }
 
 	return (uint64_t)padd;
+}
+
+
+void unmap_phyaddr(uint64_t vadd)
+{
+
+	uint64_t p1_index = (vadd << 16) >> (9 + 9 + 9 + 12 + 16);
+    uint64_t p2_index = (vadd << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
+    uint64_t p3_index = (vadd << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
+    uint64_t p4_index = (vadd << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
+	//if(man_mapping==1){
+	//kprintf("p1 index %p\n",p1_index);
+	//kprintf("p2 index %p\n",p2_index);
+	//kprintf("p3 index %p\n",p3_index);
+	//kprintf("p4 index %p\n",p4_index);}
+
+	uint64_t *p1=NULL,*p2=NULL,*p3=NULL,*p4=NULL,*padd=NULL;
+
+	uint64_t base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+	base=(((base >> 39)<<9)|0x1FE)<<30;
+	base=(((base >> 30)<<9)|0x1FE)<<21;
+	base=(((base >> 21)<<9)|0x1FE)<<12;
+
+	p1=(uint64_t *)base;
+	p2=(uint64_t *)p1[p1_index];
+	
+	kprintf("p2 %p\n",p2);
+
+	if(!p2)
+	{
+    	kprintf("p2 table not found\n");
+		return;
+	}
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|0x1FE)<<30;
+    base=(((base >> 30)<<9)|0x1FE)<<21;
+    base=(((base >> 21)<<9)|p1_index)<<12;
+	
+	p2=(uint64_t *)base;
+	p3=(uint64_t *)p2[p2_index];
+	
+	kprintf("p3 %p\n",p3);
+
+	if(!p3)
+    {
+    	kprintf("p3 table not found\n");
+    	return;
+    }
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|0x1FE)<<30;
+    base=(((base >> 30)<<9)|p1_index)<<21;
+    base=(((base >> 21)<<9)|p2_index)<<12;
+    
+    p3=(uint64_t *)base;	
+    p4=(uint64_t *)p3[p3_index];
+
+	kprintf("p4 %p\n",p4);
+
+    if(!p4)
+    {
+     	kprintf("p4 table not found\n");
+  	 	return;
+    }	
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|p1_index)<<30;
+    base=(((base >> 30)<<9)|p2_index)<<21;
+    base=(((base >> 21)<<9)|p3_index)<<12;
+    
+    p4=(uint64_t *)base;
+    padd=(uint64_t *)p4[p4_index];
+
+	//if(man_mapping==1)
+	//kprintf("padd %p\n",padd);
+	//kprintf("padd %p\n",((uint64_t)padd & 0x1));
+
+    if(((uint64_t)padd & 0x1)==0)
+    {
+    	kprintf("p4 entry not found\n");
+    	return;
+    }
+
+
+    free_page(padd);
+
+	p4[p4_index] = 0;
 }

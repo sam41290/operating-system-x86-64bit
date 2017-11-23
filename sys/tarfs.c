@@ -84,7 +84,6 @@ int oct_to_dec(char *num)
 
 
 
-
 void read_elf(char *elfaddr,PCB *proc)
 {
 	struct elf_header *elfhead=(struct elf_header *)elfaddr;
@@ -104,11 +103,14 @@ void read_elf(char *elfaddr,PCB *proc)
     }
 	//kprintf("\nheader offset: %d",off );
 	
+    // kprintf("num header %d", elfhead->e_phnum[0]);
 	char *phead=(char *)(elfaddr + off);
 	uint64_t head_count= (uint64_t)(*(elfhead->e_phnum)) + 10 * (uint64_t)(*((elfhead->e_phnum) + 1));
 	uint64_t head_size=((uint64_t)(*(elfhead->e_phentsize)))+
 						256*((uint64_t)(*((elfhead->e_phentsize)+1)));
-	for(int i=0;i<head_count;i++)
+
+	//TODO Check for head count if it is correct.
+	for(int i=0;i<head_count-1;i++)
 	{
 		//kprintf("phead:%p\n",phead);
 		struct pheader *p=(struct pheader *)phead;
@@ -118,17 +120,38 @@ void read_elf(char *elfaddr,PCB *proc)
 		vaddr=p->p_vaddr;
 		offset=p->p_offset;
 		location=(uint64_t)(elfaddr + offset);
-		//kprintf("start add:%p\n",vaddr);
+
+		// kprintf("ptype : %d %d %d %d \n", (uint64_t)p->p_type[0],(uint64_t)p->p_type[1],(uint64_t)p->p_type[2],(uint64_t)p->p_type[3]);
+		//Create vma for the segments
+		vma* seg_vma = alloc_vma(vaddr, vaddr+memsz);
+		// kprintf("seg_vma [%d - %d]\n", seg_vma->vstart, seg_vma->vend);
+		append_to_vma_list(proc, seg_vma);
+    	
+    	//It will alsways write the last segment(data segment)
+    	proc->heap_top = (uint64_t)((((seg_vma->vend) >> 12) + 1) << 12);
+
+		// kprintf("start add:%p\n",vaddr);
 		//kprintf("start location:%p\n",location);
 		//kprintf("filesz:%d\n",filesz);
-		//kprintf("memsz:%d\n",memsz);
+		// kprintf("memsz:%d\n",memsz);
 		file_map(vaddr,location,filesz,memsz);
 		//kprintf("here:%d\n",i);
 		phead = phead + head_size;
 	}
 	//kprintf("here out:%d\n",123);
 	//struct pheader *phead=()()
-	
+
+	// if (proc->mmstruct.vma_list == NULL)
+	// {
+	// 	kprintf("Empty vma list\n");
+	// }
+
+	// for (vma* it = proc->mmstruct.vma_list; it != NULL; )
+	// {
+	// 	kprintf("vma [%d - %d]\n", it->vstart, it->vend);
+	// 	it = it->nextvma;
+	// }	
+
 }
 
 

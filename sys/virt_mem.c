@@ -1,12 +1,12 @@
 #include<sys/kprintf.h>
 #include <sys/Utils.h>
 #include <sys/idt.h>
-//#include<sys/phy_mem_manager.h>
 //#include<sys/tarfs.h>
 
 #define MAX_KERN 0xFFFFFFFFFFFFFFFF
 
 uint64_t kern_VA;
+
 
 uint32_t file_map(uint64_t vadd, uint64_t source_add,uint64_t fsize,uint64_t msize)
 {
@@ -51,4 +51,43 @@ void *kmalloc(uint64_t byte_count)
 	uint64_t ret=kern_VA + 1;
 	kern_VA+=byte_count;
 	return (void *)ret;
+}
+
+vma* alloc_vma(uint64_t startAdd, uint64_t endAddr){
+
+	vma* new_vma = (vma*)kmalloc(sizeof(vma));
+	new_vma->vstart = startAdd;
+	new_vma->vend = endAddr;
+	new_vma->nextvma = NULL;
+	return new_vma;
+}
+
+void append_to_vma_list(PCB* task, vma* vma_to_insert){
+	
+	if (task->mmstruct.vma_list == NULL)
+	{
+		task->mmstruct.vma_list = vma_to_insert;
+		return;
+	}
+
+	vma* last_vma = task->mmstruct.vma_list;
+	while(last_vma->nextvma != NULL)
+	{
+		last_vma = last_vma->nextvma;
+	}
+	last_vma->nextvma = vma_to_insert;
+}
+
+int IsPageInVmaList(PCB* task, uint64_t vaddr){
+	
+	for (vma* itr = task->mmstruct.vma_list; itr != NULL;)
+	{
+		if (vaddr >= itr->vstart && vaddr <= itr->vend)
+		{
+			return 1;
+		}
+		itr = itr->nextvma;
+	}
+
+	return 0;
 }

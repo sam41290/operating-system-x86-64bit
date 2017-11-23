@@ -1,3 +1,5 @@
+#if 0 
+
 #include <sys/kprintf.h>
 #include <sys/kmalloc.h>
 extern uint64_t virtualMemoryAvailable;
@@ -31,3 +33,5 @@ void KMALLOC_TEST(){
   }
 
 }
+
+#endif
