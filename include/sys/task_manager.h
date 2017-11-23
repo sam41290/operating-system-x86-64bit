@@ -4,8 +4,10 @@
 struct pcb_t
 {
 uint64_t pid;
+uint64_t ppid;
 uint64_t entry_point;
 uint64_t u_stack;
+uint64_t k_stackbase;
 uint64_t k_stack;
 uint64_t state;
 uint64_t cr3;

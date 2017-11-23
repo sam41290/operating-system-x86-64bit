@@ -2,11 +2,11 @@
 #include <sys/Utils.h>
 #include<sys/phy_mem_manager.h>
 #include<sys/paging.h>
+#include<sys/idt.h>
 
+extern int (*p[1])(void);
 
-extern void (*p[1])(void);
-
-void sys_call()
+gpr_t sys_call(gpr_t reg)
 {
 	uint64_t syscallnum;
 	
@@ -16,9 +16,11 @@ void sys_call()
 	//"movq %%rcx,%1;\n"
 	:"=g"(syscallnum)
 	);
+	uint64_t ret=0;
 	if(syscallnum==0)
-		p[syscallnum]();
-	return;
+		ret=p[syscallnum]();
+	reg.rax=ret;
+	return reg;
 }
 
 

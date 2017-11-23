@@ -38,7 +38,13 @@ void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t ke
 	uint64_t p3_index = (vadd << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
 	uint64_t p4_index = (vadd << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
 	
-	
+	for(int i=0;i<512;i++)
+	{
+		page_directory1[i]=0x0;
+		page_directory2[i]=0x0;
+		page_directory3[i]=0x0;
+		kernelpage[i]=0x0;
+	}
 	
 	page_directory1[p1_index]=(((uint64_t)page_directory2) - ((uint64_t)kernmem - (uint64_t)physbase)) | 7;
 	page_directory2[p2_index]=(((uint64_t)page_directory3) - ((uint64_t)kernmem - (uint64_t)physbase)) | 7;

@@ -1,8 +1,9 @@
 #include<sys/kprintf.h>
+#include<sys/idt.h>
 
-int (*p[1])(void);
+int (*p[1])();
 
-int syscall_print(void)
+int syscall_print()
 {
 	//kprintf("execute syscall %p\n",p[0]);
 	uint64_t printval;
@@ -10,10 +11,13 @@ int syscall_print(void)
 	"movq %%rbx,%0;\n"
 	:"=g"(printval)
 	);
-	//kprintf("123::%p\n",printval);
+	
 	char *print=(char *)printval;
+	//kprintf("123::%p\n",printval);
+	//kprintf("user stack: %p re-entry point: %p rax:\n",reg.usersp,reg.rip);	
 	kprintf("%s",print);
-	return 0;
+	
+	return 1;
 }
 
 
