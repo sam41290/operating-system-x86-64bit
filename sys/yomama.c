@@ -4,59 +4,20 @@
 #include<sys/paging.h>
 #include <sys/virt_mem.h>
 #include <sys/idt.h>
-extern uint64_t (*p[200])(gpr_t reg);
+extern uint64_t (*p[200])(gpr_t *reg);
 
-void sys_call()
+uint64_t sys_call(gpr_t *reg)
 {
-	gpr_t reg;
-
-	__asm__(
-	"movq %%rax,%0;\n"
-	"movq %%rbx,%1;\n"
-	"movq %%rcx,%2;\n"
-	"movq %%rdx,%3;\n"
-	"movq %%rsi,%4;\n"
-	"movq %%rdi,%5;\n"
-	"movq %%rbp,%6;\n"
-	"movq %%r8,%7;\n"
-	"movq %%r9,%8;\n"
-	"movq %%r10,%9;\n"
-	"movq %%r11,%10;\n"
-	"movq %%r12,%11;\n"
-	"movq %%r13,%12;\n"
-	"movq %%r14,%13;\n"
-	"movq %%r15,%14;\n"
-	:"=g"(reg.rax), "=g"(reg.rbx), "=g"(reg.rcx), "=g"(reg.rdx), "=g"(reg.rsi), "=g"(reg.rdi), "=g"(reg.rbp), "=g"(reg.r8), "=g"(reg.r9),"=g"(reg.r10), "=g"(reg.r11), "=g"(reg.r12), "=g"(reg.r13), "=g"(reg.r14), "=g"(reg.r15)
-	);
-
-	if((int)reg.rax < 0 || (int)reg.rax >= 200)
+	if((int)reg->rax < 0 || (int)reg->rax >= 200)
 	{
 		kprintf("Invalid syscall number or Not Mapped");
-		return;
+		return 0;
 	}
+	//kprintf("\nhere\n");
+	uint64_t ret = p[(int)reg->rax](reg);
+	reg->rax = ret;
 
-	uint64_t ret = p[(int)reg.rax](reg);
-	reg.rax = ret;
-
-	__asm__(
-	"movq %0, %%rax;\n"
-	"movq %1, %%rbx;\n"
-	"movq %2, %%rcx;\n"
-	"movq %3, %%rdx;\n"
-	"movq %4, %%rsi;\n"
-	"movq %5, %%rdi;\n"
-	"movq %6, %%rbp;\n"
-	"movq %7,%%r8;\n"
-	"movq %8, %%r9;\n"
-	"movq %9, %%r10;\n"
-	"movq %10, %%r11;\n"
-	"movq %11, %%r12;\n"
-	"movq %12, %%r13;\n"
-	"movq %13, %%r14;\n"
-	"movq %14, %%r15;\n"
-	::"g"(reg.rax), "g"(reg.rbx), "g"(reg.rcx), "g"(reg.rdx), "g"(reg.rsi), "g"(reg.rdi), "g"(reg.rbp), "g"(reg.r8), "g"(reg.r9),"g"(reg.r10), "g"(reg.r11), "g"(reg.r12), "g"(reg.r13), "g"(reg.r14), "g"(reg.r15)
-	);
-	return;
+	return ret;
 }
 
 
