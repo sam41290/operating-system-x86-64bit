@@ -2,6 +2,9 @@
 #include <sys/phy_mem_manager.h>
 #include <sys/virt_mem.h>
 #include <sys/idt.h>
+#include <sys/error.h>
+#include<sys/kmalloc.h>
+#include<sys/debug.h>
 
 uint64_t (*p[200])(gpr_t reg);
 extern PCB *active;
@@ -15,27 +18,45 @@ uint64_t dead(gpr_t reg){
 	return 12653712;
 }
 
+
 uint64_t k_mmap(gpr_t reg){
 
-	//TODO: Get values from registers
-	void *addr = (void*)reg.rdi;
+	// Get values from registers
+	//TODO Use these variables
 	uint64_t length = reg.rsi;
+	
+    #ifdef DEBUG_MALLOC
+	void *addr = (void*)reg.rdi;
 	int prot = reg.rdx;
 	int flags = reg.r10;
     int fd = reg.r9; 
     int offset = reg.r8;
-
-	kprintf("addr %d length %d prot %d, flags %p, fd %d, offset %d", addr, length, prot, flags, fd, offset);
+	kprintf("addr %d length %d prot %d, flags %p, fd %d, offset %d\n", addr, length, prot, flags, fd, offset);
+	#endif
 
 	//call mmap
-	//Change this later
+	//Change this later make some freelist of vaddr to reuse vaddr
 	uint64_t nextAvailHeapMem = active->heap_top;
-	active->heap_top += PAGE_SIZE;
 
-	vma* anon_vma = alloc_vma(nextAvailHeapMem, nextAvailHeapMem+PAGE_SIZE);
+	//Point to next page after length
+	uint64_t endAddr = active->heap_top + length - 1;
+	uint64_t nextPageAfterEndAddr = (((endAddr>>12)+1)<<12); 
+	active->heap_top = nextPageAfterEndAddr;
+
+	vma* anon_vma = alloc_vma(nextAvailHeapMem, endAddr);
+
 	append_to_vma_list(active, anon_vma);
+	// walkthrough_vma_list(active);
 
+	#ifdef DEBUG_MALLOC
+	kprintf("anon_vma %p %p active->heap_top %p\n", anon_vma->vstart, anon_vma->vend, active->heap_top);
 	kprintf("malloc %p\n", nextAvailHeapMem);
+	#endif
+
+	#ifdef DEBUG_MALLOC
+	printtotalFreeBlocks();
+	#endif
+
 	return nextAvailHeapMem;
 }
 
@@ -44,13 +65,20 @@ uint64_t k_munmap(gpr_t reg){
 	//Get the address from the register to free
 
 	uint64_t addrToFree = (uint64_t)reg.rdi;
-	// uint64_t length = reg.rsi;
-	kprintf("Requested %p to free \n", addrToFree);
+	uint64_t length = (uint64_t)reg.rsi;
+	#ifdef DEBUG_MALLOC
+	kprintf("Requested %p to free length %d\n", addrToFree, length);
+	#endif
 
-
-	//TODO remove entry from vma
+	// Remove entry from vma
+	if(remove_from_vma_list(active, addrToFree, addrToFree+length) == 0)
+	{
+		ThrowSegmentationFault(addrToFree);
+	}
 	//Remove entry from pagetable and clean page
-	unmap_phyaddr(addrToFree);
+	#ifdef DEBUG_MALLOC
+	printtotalFreeBlocks();
+	#endif
 
 	return 0;
 }

@@ -7,6 +7,7 @@
 #include <sys/Utils.h>
 #include <sys/idt.h>
 #include<sys/phy_mem_manager.h>
+#include <sys/phymem.h>
 
 extern char *video;
 extern char *videostart;
@@ -215,6 +216,11 @@ uint64_t map_phyaddr(uint64_t vadd)
 
     }
 
+    for (int i = 0; i < 512; ++i)
+    {
+    	*((uint64_t*)(vadd+i)) = 0;
+    }
+    flushTLB();
 	return (uint64_t)padd;
 }
 
@@ -244,11 +250,13 @@ void unmap_phyaddr(uint64_t vadd)
 	p1=(uint64_t *)base;
 	p2=(uint64_t *)p1[p1_index];
 	
-	kprintf("p2 %p\n",p2);
+	// kprintf("p2 %p\n",p2);
 
 	if(!p2)
 	{
+		#ifdef DEBUG_PAGETABLE
     	kprintf("p2 table not found\n");
+    	#endif
 		return;
 	}
 
@@ -260,11 +268,13 @@ void unmap_phyaddr(uint64_t vadd)
 	p2=(uint64_t *)base;
 	p3=(uint64_t *)p2[p2_index];
 	
-	kprintf("p3 %p\n",p3);
+	// kprintf("p3 %p\n",p3);
 
 	if(!p3)
     {
+		#ifdef DEBUG_PAGETABLE
     	kprintf("p3 table not found\n");
+ 		#endif
     	return;
     }
 
@@ -276,11 +286,13 @@ void unmap_phyaddr(uint64_t vadd)
     p3=(uint64_t *)base;	
     p4=(uint64_t *)p3[p3_index];
 
-	kprintf("p4 %p\n",p4);
+	// kprintf("p4 %p\n",p4);
 
     if(!p4)
     {
-     	kprintf("p4 table not found\n");
+ 		#ifdef DEBUG_PAGETABLE
+    	kprintf("p4 table not found\n");
+    	#endif
   	 	return;
     }	
 
@@ -298,12 +310,40 @@ void unmap_phyaddr(uint64_t vadd)
 
     if(((uint64_t)padd & 0x1)==0)
     {
+		#ifdef DEBUG_PAGETABLE
     	kprintf("p4 entry not found\n");
+    	#endif
     	return;
     }
 
+    for (int i = 0; i < 512; ++i)
+    {
+    	*((uint64_t*)(vadd+i)) = 0;
+    }
 
     free_page(padd);
 
 	p4[p4_index] = 0;
+}
+
+void unmap_phyaddr_range(uint64_t vstartAddr, uint64_t vendAddr)
+{
+	//Find the block end
+	if (vendAddr % PAGE_SIZE != 0)
+	{
+		vendAddr = (((vendAddr>>12) + 1)<<12);
+	}
+
+	//Find the block start 
+	if (vstartAddr % PAGE_SIZE != 0)
+	{
+		vstartAddr = ((vstartAddr>>12)<<12);
+	}
+
+	for (int i = vstartAddr; i < vendAddr;)
+	{
+		unmap_phyaddr(i);
+		i += PAGE_SIZE;
+	}
+
 }

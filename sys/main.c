@@ -24,7 +24,7 @@ extern uint64_t kernbase;
 extern uint64_t upml4;
 extern uint64_t ustacktop;
 extern uint64_t u_heapboundary;
-
+uint64_t RING0_MODE = 1;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {

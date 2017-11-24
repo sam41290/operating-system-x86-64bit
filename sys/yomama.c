@@ -4,8 +4,10 @@
 #include<sys/paging.h>
 #include <sys/virt_mem.h>
 #include <sys/idt.h>
-extern uint64_t (*p[200])(gpr_t reg);
+#include <sys/error.h>
 
+extern uint64_t (*p[200])(gpr_t reg);
+extern uint64_t RING0_MODE;
 void sys_call()
 {
 	gpr_t reg;
@@ -34,9 +36,11 @@ void sys_call()
 		kprintf("Invalid syscall number or Not Mapped");
 		return;
 	}
+	RING0_MODE = 1;
 
 	uint64_t ret = p[(int)reg.rax](reg);
 	reg.rax = ret;
+	RING0_MODE = 0;
 
 	__asm__(
 	"movq %0, %%rax;\n"
@@ -56,6 +60,7 @@ void sys_call()
 	"movq %14, %%r15;\n"
 	::"g"(reg.rax), "g"(reg.rbx), "g"(reg.rcx), "g"(reg.rdx), "g"(reg.rsi), "g"(reg.rdi), "g"(reg.rbp), "g"(reg.r8), "g"(reg.r9),"g"(reg.r10), "g"(reg.r11), "g"(reg.r12), "g"(reg.r13), "g"(reg.r14), "g"(reg.r15)
 	);
+
 	return;
 }
 
@@ -91,7 +96,6 @@ void pagemama(void)
 {
 	//ctr ++;
 	
-	//kprintf("page fault\n");
 
 	uint64_t addr;
 
@@ -100,6 +104,7 @@ void pagemama(void)
 	:"=g"(addr)
 	:
 	);
+	// kprintf("page fault %p\n", addr);
 
 	if (ctr > 0)
 	{
@@ -108,13 +113,13 @@ void pagemama(void)
 	}
     //kprintf("address: %p\n",addr);
 
-	if (active == NULL)
+	if (RING0_MODE == 1)
 	{
 		// kprintf("There is no process yet!! page fault for %p\n", addr);
 		// Thinking it is still in kernel mode
 		if(map_phyaddr(addr) == -1)
 		{
-			kprintf("\ncan not allocate physical page\n");
+			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);
 			while(1);
 		}		
 		return;
@@ -127,14 +132,13 @@ void pagemama(void)
 		//Allocate physical page
 		if(map_phyaddr(addr)==-1)
 		{
-			kprintf("\ncan not allocate physical page\n");
-			while(1);
+			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);
+			while(1);	
 		}		
 	}
 	else
 	{
-		kprintf("Trying to access %p, Segmentation Fault! Going to kill!\n", addr);
-		while(1);
+		ThrowSegmentationFault(addr);	
 	}
 
 
@@ -145,7 +149,6 @@ void pagemama(void)
 
 void protection_fault()
 {
-     kprintf("Exception: General Protection Fault\n");
      uint64_t cr2;
      __asm__(
          "movq %%cr2, %0"
@@ -153,8 +156,7 @@ void protection_fault()
          :
          :"memory"
      );
-	 kprintf("address: %p\n",cr2);
-     while(1);
+     ThrowSecurityError(cr2);
 }
 
 void keymama(void)

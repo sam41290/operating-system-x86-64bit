@@ -8,6 +8,7 @@
 #include<sys/defs.h>
 #define PROC_SIZE 10
 
+extern uint64_t RING0_MODE;
 
 PCB *proc_start;
 PCB *proc_end;
@@ -328,7 +329,7 @@ void init_proc()
 	
 	set_tss_rsp((void *)active->k_stack);
 	
-	
+	RING0_MODE = 0;
      __asm__(
      "pushq $0x23;\n"
      "pushq %0;\n"

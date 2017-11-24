@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <sys/Utils.h>
 #include <sys/idt.h>
+#include <sys/error.h>
 
 //---------------------------------------------------------
 struct freelist_v2 {
@@ -20,7 +21,21 @@ static int currblock = 0;
 #define PAGE_SIZE 0x1000
 #define KERNBASE 0xFFFFFFFF80000000
 
+void printtotalFreeBlocks(){
+	kprintf("Total Free Blocks %d\n", totalblockcount);
+}
 
+void flushTLB(){
+
+	__asm__(
+	"movq %%cr3,%%rax;\n"
+	"movq %%rax,%%cr3"
+	::
+	);
+	
+}
+
+uint64_t FREEMEMORY;
 
 uint64_t freelist(uint64_t base, uint64_t length,uint64_t kernmem,uint64_t physbase,uint64_t physfree)
 {
@@ -31,6 +46,7 @@ uint64_t freelist(uint64_t base, uint64_t length,uint64_t kernmem,uint64_t physb
 		return 0;
 	}
 	uint64_t last_addr= base + length;
+
 	while (base < last_addr)
     {
         if(base % 4096 != 0)
@@ -39,10 +55,10 @@ uint64_t freelist(uint64_t base, uint64_t length,uint64_t kernmem,uint64_t physb
             base=(base-mod) + 4096;
             continue;
         }
-		if ((base >= physbase && base <= (physfree + (1024*1024))) || (base >= 0xB8000 && base <= 0xBC096))
+		if ((base <= (physfree + (1024*1024))))
         {
 			base=base + 4096;
-			currblock++;
+			FREEMEMORY = base;
             continue;                               // Taking care of kernel in memory & Video memory (does not map them in free list)
         }
 
@@ -72,7 +88,7 @@ uint64_t get_page()
 	if (totalblockcount < 5)
 	{
 		//out of memory
-		kprintf("DANGER! Out of Memory!!!\n");
+		ThrowOutOfMemoryError();
 		return (uint64_t)-1;	
 	}
 
@@ -88,18 +104,24 @@ uint64_t get_page()
 	totalblockcount--;
 
 	// kprintf("returning %p\n", freeblock*PAGE_SIZE);
-	return (uint64_t)(freeblock*PAGE_SIZE);
+	return (uint64_t)(FREEMEMORY + freeblock*PAGE_SIZE);
 }
+
+
 
 void free_page(uint64_t paddr){
 
-	int blockindex = (paddr >> 12 << 12 >> 12);
+	int blockindex =  (paddr >> 12 << 12 >> 12) - (FREEMEMORY >> 12 << 12 >> 12);
 
 	p_list[blockindex].next = head_freelist;
 	head_freelist = blockindex;
 	totalblockcount++;
-	kprintf("%p freed!", paddr);
 	//TODO : memset all to 0
+
+	flushTLB();
+	#ifdef DEBUG_MALLOC
+	kprintf("%p freed!\n", paddr);
+	#endif
 }
 
 //---------------------------------------------------------------------------

@@ -32,6 +32,120 @@ void dummysyscall(){
 
 	return;
 }
+
+void TESTMALLOC(){
+
+// {
+// 	int* trymalloc = (int*)malloc(2000*sizeof(int));
+// 	// printf("add malloc %p\n", trymalloc);	
+// 	trymalloc[0] = 1;
+// 	trymalloc[1888] = 2;
+// 	free(trymalloc);
+
+
+// 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc2[0] = 1;
+
+// 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc3[0] = 1;
+
+// 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc4[0] = 1;
+
+// 	free(trymalloc2);
+// 	free(trymalloc3);
+// 	free(trymalloc4);	
+
+// }
+
+// {
+// 	// 23557 blocks ~ 90+ MB
+// 	int kill = 0;
+// 	while(1){
+// 		int* killme = (int*)malloc(1000*sizeof(int));
+// 		killme[0] = 1;
+// 		printf("Allocated %d %p %d\n", kill, killme, killme[0]);
+// 		kill++;
+// 	}
+
+// }
+
+// {
+// 	int kill = 0;
+// 	while(1){
+// 		int* killme = (int*)malloc(1000*sizeof(int));
+// 		killme[0] = kill;
+// 		printf("Allocated %d %p %d\n", kill, killme, killme[0]);
+// 		free(killme);
+// 		kill++;
+// 	}
+// }
+
+// {
+	
+// 	int kill = 0;
+// 	while(1){
+// 		int* killme = (int*)malloc(1000*sizeof(int));
+// 		printf("Allocated %d %p\n", kill, killme);
+// 		kill++;
+// 	}
+
+// }
+
+
+// {
+	// //Page table for virtual address take space so not infinite. Need to reuse virtual address to make this work
+	// int kill = 0;
+	// while(1){
+	// 	int* killme = (int*)malloc(8000*sizeof(int));
+	// 	killme[0] = 1;
+	// 	killme[1500] = 1;
+	// 	killme[2500] = 1;
+	// 	killme[3500] = 1;
+	// 	killme[4500] = 1;
+	// 	killme[5500] = 1;
+	// 	printf("Allocated %d %p\n", kill, killme);
+	// 	free(killme);
+	// 	kill++;
+	// }
+
+// }
+
+// {
+// 		int kill = 0;
+// 		int* killme = (int*)malloc(8000*sizeof(int));
+// 		killme[0] = 1;
+// 		killme[1500] = 1;		
+// 		killme[2500] = 1;
+// 		killme[3500] = 1;
+// 		killme[4500] = 1;
+// 		killme[5500] = 1;
+// 		printf("Allocated %d %p\n", kill, killme);
+// 		free(killme);
+// 		kill++;
+		
+// }
+
+
+
+
+	// trymalloc[0] = 2;
+	// printf("result %d\n", trymalloc[0]);	
+
+	// // trymalloc[1025] = 99;
+	// // printf("result %d\n", trymalloc[1025]);	
+	// free(trymalloc);
+
+	// int* try2 = (int*)malloc(4096);
+	// try2[0] = 1;
+
+	// int* try3 = (int*)malloc(4096);
+	// try3[0] = 1;
+
+	// free(try2);	
+}
+
+
 int main(int argc, char *argv[], char *envp[]) {
 
 	int a=10;
@@ -45,26 +159,8 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	// dummysyscall();
 
-	// int* trymalloc = (int*)malloc(12345);
-	// printf("add malloc %p\n", trymalloc);	
-	// trymalloc[0] = 1;
-	// trymalloc[1] = 2;
-	// trymalloc[2] = 3;
-	// printf("result %d\n", trymalloc[0]);	
-	// printf("result %d\n", trymalloc[1]);	
-	// printf("result %d\n", trymalloc[2]);	
+	TESTMALLOC();
 
-	// // trymalloc[1025] = 99;
-	// // printf("result %d\n", trymalloc[1025]);	
-	// free(trymalloc);
-
-	// int* try2 = (int*)malloc(4096);
-	// try2[0] = 1;
-
-	// int* try3 = (int*)malloc(4096);
-	// try3[0] = 1;
-
-	// free(try2);
 
 	while(1);
 	return 0;

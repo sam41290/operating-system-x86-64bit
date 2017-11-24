@@ -13,6 +13,7 @@ struct freelist {
 int next;
 }__attribute__((packed));
 
+void flushTLB();
 uint64_t p_allocblock();
 void p_freeblock(int blockindex);
 void p_init(uint64_t startPhysFree, uint64_t endPhysFree, uint64_t physfree);
