@@ -14,6 +14,8 @@
 
 #include <sys/defs.h>
 
+#ifndef _IDT_H
+#define _IDT_H
 struct idtr_t {
   uint16_t size;
   uint64_t addr;
@@ -36,18 +38,21 @@ struct IDTDescr IDT[256];
 typedef struct registers
 {
      uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rbp, rdi, rsi, rdx, rcx, rbx, rax; // Pushed by pushq i.e. all general purpose registers
-     unsigned char err_code;    // Interrupt number and error code (if applicable)
-     uint64_t ds;                  // Data segment selector
-     uint64_t rip, cs, eflags, usersp; // Pushed by the processor automatically.
+     uint64_t err_code;    // Interrupt number and error code (if applicable)
+     //uint64_t ds;                  // Data segment selector
+     //uint64_t rip, cs, eflags, usersp,ss; // Pushed by the processor automatically.
 } registers_t;
 
 typedef struct gpr
 {
      uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rbp, rdi, rsi, rdx, rcx, rbx, rax; // Pushed by pushq i.e. all general purpose registers
-     // uint64_t rax, rbx, rcx, rdx, rsi, rdi, rbp, r8, r9, r10, r11, r12, r13, r14;
+	 //uint64_t ds;                  // Data segment selector
+     uint64_t rip, cs, eflags, usersp,ss; // Pushed by the processor automatically.
 } gpr_t;
 
 void init_idt();
+
+#endif
 
 
 

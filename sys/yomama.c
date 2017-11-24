@@ -6,62 +6,27 @@
 #include <sys/idt.h>
 #include <sys/error.h>
 
-extern uint64_t (*p[200])(gpr_t reg);
-extern uint64_t RING0_MODE;
-void sys_call()
+extern uint64_t (*p[200])(gpr_t *reg);
+extern uint64_t RING_0_MODE;
+
+
+
+uint64_t sys_call(gpr_t *reg)
 {
-	gpr_t reg;
-
-	__asm__(
-	"movq %%rax,%0;\n"
-	"movq %%rbx,%1;\n"
-	"movq %%rcx,%2;\n"
-	"movq %%rdx,%3;\n"
-	"movq %%rsi,%4;\n"
-	"movq %%rdi,%5;\n"
-	"movq %%rbp,%6;\n"
-	"movq %%r8,%7;\n"
-	"movq %%r9,%8;\n"
-	"movq %%r10,%9;\n"
-	"movq %%r11,%10;\n"
-	"movq %%r12,%11;\n"
-	"movq %%r13,%12;\n"
-	"movq %%r14,%13;\n"
-	"movq %%r15,%14;\n"
-	:"=g"(reg.rax), "=g"(reg.rbx), "=g"(reg.rcx), "=g"(reg.rdx), "=g"(reg.rsi), "=g"(reg.rdi), "=g"(reg.rbp), "=g"(reg.r8), "=g"(reg.r9),"=g"(reg.r10), "=g"(reg.r11), "=g"(reg.r12), "=g"(reg.r13), "=g"(reg.r14), "=g"(reg.r15)
-	);
-
-	if((int)reg.rax < 0 || (int)reg.rax >= 200)
+	RING_0_MODE=1;
+	uint64_t syscallnum=reg->rax;
+	if(syscallnum < 0 || syscallnum >= 200)
 	{
 		kprintf("Invalid syscall number or Not Mapped");
-		return;
+		return 0;
 	}
-	RING0_MODE = 1;
-
-	uint64_t ret = p[(int)reg.rax](reg);
-	reg.rax = ret;
-	RING0_MODE = 0;
-
-	__asm__(
-	"movq %0, %%rax;\n"
-	"movq %1, %%rbx;\n"
-	"movq %2, %%rcx;\n"
-	"movq %3, %%rdx;\n"
-	"movq %4, %%rsi;\n"
-	"movq %5, %%rdi;\n"
-	"movq %6, %%rbp;\n"
-	"movq %7,%%r8;\n"
-	"movq %8, %%r9;\n"
-	"movq %9, %%r10;\n"
-	"movq %10, %%r11;\n"
-	"movq %11, %%r12;\n"
-	"movq %12, %%r13;\n"
-	"movq %13, %%r14;\n"
-	"movq %14, %%r15;\n"
-	::"g"(reg.rax), "g"(reg.rbx), "g"(reg.rcx), "g"(reg.rdx), "g"(reg.rsi), "g"(reg.rdi), "g"(reg.rbp), "g"(reg.r8), "g"(reg.r9),"g"(reg.r10), "g"(reg.r11), "g"(reg.r12), "g"(reg.r13), "g"(reg.r14), "g"(reg.r15)
-	);
-
-	return;
+	//kprintf("\nhere %d\n",syscallnum);
+	uint64_t syscall_ret = p[(int)reg->rax](reg);
+	reg->rax = syscall_ret;
+	RING_0_MODE=0;
+	//kprintf("\nhere %d\n",syscallnum);
+	//while(1);
+	return syscall_ret;
 }
 
 
@@ -104,7 +69,9 @@ void pagemama(void)
 	:"=g"(addr)
 	:
 	);
-	// kprintf("page fault %p\n", addr);
+	#ifdef DEBUG_MALLOC
+	kprintf("page fault %p\n", addr);
+	#endif
 
 	if (ctr > 0)
 	{
@@ -113,10 +80,11 @@ void pagemama(void)
 	}
     //kprintf("address: %p\n",addr);
 
-	if (RING0_MODE == 1)
+	if (RING_0_MODE == 1)
 	{
 		// kprintf("There is no process yet!! page fault for %p\n", addr);
 		// Thinking it is still in kernel mode
+		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
 		if(map_phyaddr(addr) == -1)
 		{
 			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);
@@ -130,6 +98,7 @@ void pagemama(void)
 	{
 		//Page fault is valid as it had requested for malloc earlier.
 		//Allocate physical page
+		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
 		if(map_phyaddr(addr)==-1)
 		{
 			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);

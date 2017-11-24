@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include<sys/defs.h>
 
 void foolcompiler(int* a){
 	return;
@@ -13,50 +15,58 @@ void dummysyscall(){
 	int prot = 1|2;//PROT_READ;
 	int flags = 1|0x20;//MAP_SHARED;
     int fd = -1; int offset = 0;
-    int ret;
-	
+    int ret=0;
 	__asm__(
-	"movq %1,%%rax;\n"
-	"movq %2,%%rdi;\n"
-	"movq %3,%%rsi;\n"
-	"movq %4,%%rdx;\n"	
-	"movq %5,%%r10;\n"	
-	"movq %6,%%r9;\n"
-	"movq %7,%%r8;\n"
+	"movq %0,%%rax;\n"
+	"movq %1,%%rdi;\n"
+	"movq %2,%%rsi;\n"
+	"movq %3,%%rdx;\n"	
+	"movq %4,%%r10;\n"	
+	"movq %5,%%r9;;\n"
+	"movq %6,%%r8;\n"
 	"int $0x80;\n"
-	"movq %%rax, %0"
-	:"=m"(ret)
+	:
 	:"m"(syscallnumber),"m"((uint64_t)addr),"m"(length),"m"(prot),"m"(flags),"m"(fd),"m"(offset)
 	);
-    printf("Returned From dummysyscall %d\n", ret);
+    //printf("returned from syscall\n");
 
+	__asm__(
+	"movq %%rax, %0"
+	:"=m"(ret)
+	:
+	);
+	printf("Returned From dummysyscall %d\n", ret);
 	return;
 }
 
 void TESTMALLOC(){
 
-// {
-// 	int* trymalloc = (int*)malloc(2000*sizeof(int));
-// 	// printf("add malloc %p\n", trymalloc);	
-// 	trymalloc[0] = 1;
-// 	trymalloc[1888] = 2;
-// 	free(trymalloc);
+{
+	int* trymalloc = (int*)malloc(2048*sizeof(int));
+	// printf("add malloc %p\n", trymalloc);	
+	trymalloc[0] = 1;
+	printf("malloc success %d\n", trymalloc[0]);
+	trymalloc[2047] = 2;
+	printf("malloc success %d\n", trymalloc[2047]);
 
 
-// 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc2[0] = 1;
+	free(trymalloc);
 
-// 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc3[0] = 1;
 
-// 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc4[0] = 1;
+	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+	trymalloc2[0] = 1;
 
-// 	free(trymalloc2);
-// 	free(trymalloc3);
-// 	free(trymalloc4);	
+	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+	trymalloc3[0] = 1;
 
-// }
+	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+	trymalloc4[0] = 1;
+
+	free(trymalloc2);
+	free(trymalloc3);
+	free(trymalloc4);	
+
+}
 
 // {
 // 	// 23557 blocks ~ 90+ MB
@@ -94,20 +104,20 @@ void TESTMALLOC(){
 
 
 // {
-	// //Page table for virtual address take space so not infinite. Need to reuse virtual address to make this work
-	// int kill = 0;
-	// while(1){
-	// 	int* killme = (int*)malloc(8000*sizeof(int));
-	// 	killme[0] = 1;
-	// 	killme[1500] = 1;
-	// 	killme[2500] = 1;
-	// 	killme[3500] = 1;
-	// 	killme[4500] = 1;
-	// 	killme[5500] = 1;
-	// 	printf("Allocated %d %p\n", kill, killme);
-	// 	free(killme);
-	// 	kill++;
-	// }
+// 	//Page table for virtual address take space so not infinite. Need to reuse virtual address to make this work
+// 	int kill = 0;
+// 	while(1){
+// 		int* killme = (int*)malloc(8000*sizeof(int));
+// 		killme[0] = 1;
+// 		killme[1500] = 1;
+// 		killme[2500] = 1;
+// 		killme[3500] = 1;
+// 		killme[4500] = 1;
+// 		killme[5500] = 1;
+// 		printf("Allocated %d %p\n", kill, killme);
+// 		free(killme);
+// 		kill++;
+// 	}
 
 // }
 
@@ -145,6 +155,29 @@ void TESTMALLOC(){
 	// free(try2);	
 }
 
+void TESTCONTEXTSWITCH(){
+
+	 pid_t pid;
+	 pid=fork();
+	 if(pid > 0)
+	 {
+		 printf("I am parent\n");
+		 yield();
+		 printf("I am parent 1.0\n");
+		 yield();
+		 while(1);
+		
+	 }
+	 if(pid==0)
+	 {
+		 printf("I am child 1\n");
+		 yield();
+		 printf("I am child 1.0\n");
+		 yield();
+		 printf("I am child 1.1\n");
+		 while(1);
+	 }
+}
 
 int main(int argc, char *argv[], char *envp[]) {
 
@@ -161,7 +194,9 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	TESTMALLOC();
 
+	//dummysyscall();
+	
+	// TESTCONTEXTSWITCH();
 
-	while(1);
-	return 0;
+	 while(1);
 }

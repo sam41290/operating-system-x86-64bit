@@ -1,4 +1,4 @@
-
+#include<sys/idt.h>
 #ifndef _PROC_H
 #define _PROC_H
 
@@ -19,10 +19,12 @@ typedef struct mm mm_struct;
 
 struct pcb_t
 {
+	uint64_t sno;
 	uint64_t pid;
 	uint64_t ppid;
 	uint64_t entry_point;
 	uint64_t u_stack;
+	uint64_t u_stackbase;
 	uint64_t k_stackbase;
 	uint64_t k_stack;
 	uint64_t state;
@@ -34,11 +36,17 @@ struct pcb_t
 
 typedef struct pcb_t PCB;
 
-void switch_to();
+uint64_t switch_to(gpr_t *);
+void kernel_switch_to();
 void init_proc();
 void test();
 
 void syscall_init();
+void create_kstack(PCB *proc);
+void copy_kstack(PCB *proc);
+void change_ptable(uint64_t addr);
+void init_stack(PCB *proc);
+PCB *get_nextproc();
 
 void context1();
 
