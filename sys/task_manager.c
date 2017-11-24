@@ -10,7 +10,6 @@
 #define PROC_SIZE 100
 
 
-
 extern uint64_t RING_0_MODE;
 int proc_start=0;
 int proc_end=0;
@@ -57,7 +56,6 @@ PCB *get_nextproc()
 
 void init_stack(PCB *proc)
 {
-	//kprintf("here init stack %d\n",proc->pid);
 	int i;
 	if(proc->pid==0)
 	{
@@ -289,8 +287,7 @@ PCB* create_new_process(){
 	new_task->mmstruct.vma_list = NULL;
 	//initialize other PCB members if needed
 	return new_task;
-}
-*/
+}*/
 
 
 

@@ -140,6 +140,7 @@ void read_elf(char *elfaddr,PCB *proc)
 		//kprintf("here:%d\n",i);
 		phead = phead + head_size;
 	}
+	kprintf("Heap top %p\n", proc->heap_top);
 	//kprintf("here out:%d\n",123);
 	//struct pheader *phead=()()
 

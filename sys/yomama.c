@@ -4,8 +4,9 @@
 #include<sys/paging.h>
 #include <sys/virt_mem.h>
 #include <sys/idt.h>
-extern uint64_t (*p[200])(gpr_t *reg);
+#include <sys/error.h>
 
+extern uint64_t (*p[200])(gpr_t *reg);
 extern uint64_t RING_0_MODE;
 
 
@@ -60,7 +61,6 @@ void pagemama(void)
 {
 	//ctr ++;
 	
-	//kprintf("page fault\n");
 
 	uint64_t addr;
 
@@ -69,6 +69,9 @@ void pagemama(void)
 	:"=g"(addr)
 	:
 	);
+	#ifdef DEBUG_MALLOC
+	kprintf("page fault %p\n", addr);
+	#endif
 
 	if (ctr > 0)
 	{
@@ -77,33 +80,34 @@ void pagemama(void)
 	}
     //kprintf("address: %p\n",addr);
 
-	if (RING_0_MODE==1)
+	if (RING_0_MODE == 1)
 	{
 		// kprintf("There is no process yet!! page fault for %p\n", addr);
 		// Thinking it is still in kernel mode
+		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
 		if(map_phyaddr(addr) == -1)
 		{
-			kprintf("\ncan not allocate physical page\n");
+			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);
 			while(1);
 		}		
 		return;
 	}
 
 	//Check for address in process vma list
-	if (IsPageInVmaList(active, addr) == 1 )
+	if (IsPageInVmaList(active, addr) == 1)
 	{
 		//Page fault is valid as it had requested for malloc earlier.
 		//Allocate physical page
+		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
 		if(map_phyaddr(addr)==-1)
 		{
-			kprintf("\ncan not allocate physical page\n");
-			while(1);
+			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);
+			while(1);	
 		}		
 	}
 	else
 	{
-		kprintf("Trying to access %p, Segmentation Fault! Going to kill!\n", addr);
-		while(1);
+		ThrowSegmentationFault(addr);	
 	}
 
 
@@ -114,7 +118,6 @@ void pagemama(void)
 
 void protection_fault()
 {
-     kprintf("Exception: General Protection Fault\n");
      uint64_t cr2;
      __asm__(
          "movq %%cr2, %0"
@@ -122,8 +125,7 @@ void protection_fault()
          :
          :"memory"
      );
-	 kprintf("address: %p\n",cr2);
-     while(1);
+     ThrowSecurityError(cr2);
 }
 
 void keymama(void)
