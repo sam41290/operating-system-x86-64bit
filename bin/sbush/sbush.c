@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include<sys/defs.h>
 
 void foolcompiler(int* a){
 	return;
@@ -47,28 +49,48 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	printf("hello world!!! %d\n",a);
 
-	 //dummysyscall();
-
-	 int* trymalloc = (int*)malloc(12345);
-	 printf("add malloc %p\n", trymalloc);	
-	 trymalloc[0] = 1;
-	 trymalloc[1] = 2;
-	 trymalloc[2] = 3;
-	 printf("result %d\n", trymalloc[0]);	
-	 printf("result %d\n", trymalloc[1]);	
-	 printf("result %d\n", trymalloc[2]);	
-     
-	 // trymalloc[1025] = 99;
-	 // printf("result %d\n", trymalloc[1025]);	
-	 free(trymalloc);
-     
-	 int* try2 = (int*)malloc(4096);
-	 try2[0] = 1;
-     
-	 int* try3 = (int*)malloc(4096);
-	 try3[0] = 1;
-     
-	 free(try2);
+	//dummysyscall();
+	 pid_t pid;
+	 pid=fork();
+	 if(pid > 0)
+	 {
+		 printf("I am parent\n");
+		 yield();
+		 printf("I am parent 1.0\n");
+		 yield();
+		 while(1);
+		
+	 }
+	 if(pid==0)
+	 {
+		 printf("I am child 1\n");
+		 yield();
+		 printf("I am child 1.0\n");
+		 yield();
+		 printf("I am child 1.1\n");
+		 while(1);
+	 }
+	 while(1);
+	 //int* trymalloc = (int*)malloc(12345);
+	 //printf("add malloc %p\n", trymalloc);	
+	 //trymalloc[0] = 1;
+	 //trymalloc[1] = 2;
+	 //trymalloc[2] = 3;
+	 //printf("result %d\n", trymalloc[0]);	
+	 //printf("result %d\n", trymalloc[1]);	
+	 //printf("result %d\n", trymalloc[2]);	
+     //
+	 //// trymalloc[1025] = 99;
+	 //// printf("result %d\n", trymalloc[1025]);	
+	 //free(trymalloc);
+     //
+	 //int* try2 = (int*)malloc(4096);
+	 //try2[0] = 1;
+     //
+	 //int* try3 = (int*)malloc(4096);
+	 //try3[0] = 1;
+     //
+	 //free(try2);
 
 	while(1);
 	return 0;

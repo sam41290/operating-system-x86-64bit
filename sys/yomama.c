@@ -6,18 +6,26 @@
 #include <sys/idt.h>
 extern uint64_t (*p[200])(gpr_t *reg);
 
+extern uint64_t RING_0_MODE;
+
+
+
 uint64_t sys_call(gpr_t *reg)
 {
-	if((int)reg->rax < 0 || (int)reg->rax >= 200)
+	RING_0_MODE=1;
+	uint64_t syscallnum=reg->rax;
+	if(syscallnum < 0 || syscallnum >= 200)
 	{
 		kprintf("Invalid syscall number or Not Mapped");
 		return 0;
 	}
-	//kprintf("\nhere\n");
-	uint64_t ret = p[(int)reg->rax](reg);
-	reg->rax = ret;
-
-	return ret;
+	//kprintf("\nhere %d\n",syscallnum);
+	uint64_t syscall_ret = p[(int)reg->rax](reg);
+	reg->rax = syscall_ret;
+	RING_0_MODE=0;
+	//kprintf("\nhere %d\n",syscallnum);
+	//while(1);
+	return syscall_ret;
 }
 
 
@@ -69,7 +77,7 @@ void pagemama(void)
 	}
     //kprintf("address: %p\n",addr);
 
-	if (active == NULL)
+	if (RING_0_MODE==1)
 	{
 		// kprintf("There is no process yet!! page fault for %p\n", addr);
 		// Thinking it is still in kernel mode
@@ -82,7 +90,7 @@ void pagemama(void)
 	}
 
 	//Check for address in process vma list
-	if (IsPageInVmaList(active, addr) == 1)
+	if (IsPageInVmaList(active, addr) == 1 )
 	{
 		//Page fault is valid as it had requested for malloc earlier.
 		//Allocate physical page

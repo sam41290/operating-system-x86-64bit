@@ -214,6 +214,10 @@ uint64_t map_phyaddr(uint64_t vadd)
 		p4[p4_index]=((uint64_t)padd & 0xFFFFFFFFFFFFF000) | 7;
 
     }
+	for (int i=0;i<512;i++)
+	{
+		*((uint64_t *)vadd + i)=0;
+	}
 
 	return (uint64_t)padd;
 }
