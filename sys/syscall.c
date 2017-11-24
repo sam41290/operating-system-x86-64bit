@@ -156,6 +156,12 @@ uint64_t syscall_switch(gpr_t *reg)
 
 uint64_t syscall_fork(gpr_t *reg)
 {
+	
+	if((proc_end + 1) % 101==proc_start)
+	{
+		kprintf("child can not be queued\n");
+		while(1);
+	}
 	PCB *child;
 	int i;
 	for(i=0;i<100;i++)
@@ -180,11 +186,6 @@ uint64_t syscall_fork(gpr_t *reg)
 	
 	create_kstack(child);
 	copy_kstack(child);
-	if((proc_end + 1) % 101==proc_start)
-	{
-		kprintf("child can not be queued\n");
-		while(1);
-	}
 	
 	
 	gpr_t *parent_rg,*child_rg;
