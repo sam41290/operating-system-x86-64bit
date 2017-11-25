@@ -74,11 +74,7 @@ void init_stack(PCB *proc)
 	
 	if(proc->pid==0)
 	{
-		//uint64_t top=(ustacktop -(4096)) & 0xFFFFFFFFFFFFF000;
-		//unmap_phyaddr(top);
-		//
-		//kprintf("phys stack: %p\n",phys_stack);
-		//kprintf("\nfrom init top pid=0: %p\n",top);
+		
 		for(i=0;i<=4096;i++)
 		{
 			*((uint64_t *)(top - i))=0;
@@ -88,18 +84,11 @@ void init_stack(PCB *proc)
 	}
 	else
 	{	//kprintf("\nfrom init active->u_stackbase: %p %p\n",active->u_stack,*((uint64_t *)(active->u_stackbase-1)));
-		//top=(uint64_t )active->u_stack;
-		
-		//top=(top -(4096)) & 0xFFFFFFFFFFFFF000;
-		
-		
-		//unmap_phyaddr(top);
-		//map_phyaddr(top);
+
 		//kprintf("phys stack: %p\n",phys_stack);
 		//ctr=1;
 		proc->u_stackbase=top;
 		uint64_t parent_stackbase=active->u_stackbase;
-		//kprintf("\nfrom init top: %p\n",top);
 		for(i=0;i<4096;i++)
 		{
 			if(parent_stackbase>=active->u_stack)
