@@ -154,49 +154,72 @@ void TESTMALLOC(){
 
 	// free(try2);	
 }
-
+/*
 void TESTCONTEXTSWITCH(){
 
+	int a=5;
 	 pid_t pid;
 	 pid=fork();
 	 if(pid > 0)
 	 {
-		 printf("I am parent\n");
+		 printf("I am parent %d\n",a);
 		 yield();
-		 printf("I am parent 1.0\n");
-		 yield();
+		 //printf("I am parent 1.0\n");
+		 //yield();
 		 while(1);
 		
 	 }
 	 if(pid==0)
 	 {
-		 printf("I am child 1\n");
+		 printf("I am child %d\n",a);
+		 //a=a+1;
 		 yield();
-		 printf("I am child 1.0\n");
-		 yield();
-		 printf("I am child 1.1\n");
+		 printf("I am child %d\n",a);
+		 //yield();
+		 //printf("I am child 1.1\n");
 		 while(1);
 	 }
 }
-
+*/
 int main(int argc, char *argv[], char *envp[]) {
 
-	int a=10;
 	// printf("sbush> %d\n",a);
-	a=a+1;
 
-	a=printf("sbush> %d\n",a);
-	//a=a+1;
+	printf("sbush>\n");
 
-	printf("hello world!!! %d\n",a);
+	printf("hello world!!!\n");
 
 	// dummysyscall();
 
-	TESTMALLOC();
+	//TESTMALLOC();
 
 	//dummysyscall();
 	
-	// TESTCONTEXTSWITCH();
+	 //TESTCONTEXTSWITCH();
+	 
+	 int a=5;
+	 pid_t pid;
+	 pid=fork();
+	 //printf("111 %d\n",pid);
+	 if(pid > 0)
+	 {
+		 printf("I am parent %d\n",a);
+		 yield();
+		 printf("I am parent %d\n",a);
+		 //yield();
+		 while(1);
+		
+	 }
+	 if(pid==0)
+	 {
+		 printf("I am child %d\n",a);
+		 a=a+1;
+		 yield();
+		 printf("I am child %d\n",a);
+		 yield();
+		 //printf("I am child 1.1\n");
+		 while(1);
+	 }
 
 	 while(1);
 }

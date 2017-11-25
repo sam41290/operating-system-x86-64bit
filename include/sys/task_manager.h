@@ -47,6 +47,10 @@ void copy_kstack(PCB *proc);
 void change_ptable(uint64_t addr);
 void init_stack(PCB *proc);
 PCB *get_nextproc();
+int check_cow(uint64_t addr);
+void cow(uint64_t addr);
+void copy_parent_stack();
+uint64_t mappageTable();
 
 void context1();
 

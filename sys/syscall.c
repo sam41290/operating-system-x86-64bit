@@ -114,6 +114,8 @@ uint64_t syscall_print(gpr_t *reg)
 uint64_t syscall_switch(gpr_t *reg)
 {
 	//kprintf("\nhere\n");
+
+	
 	(proc_Q + proc_end)->sno         =active->sno;        
 	(proc_Q + proc_end)->pid         =active->pid;        
 	(proc_Q + proc_end)->ppid        =active->ppid ;      
@@ -135,10 +137,18 @@ uint64_t syscall_switch(gpr_t *reg)
 	//kprintf("old process user stack: %p\n",reg);
 	//gpr_t *new_rg=(gpr_t *)active->k_stack;
 	//kprintf("new process user stack: %p k_stack%p\n",new_rg->usersp,active->k_stack);
-	change_ptable(active->cr3);
-	kprintf("switching pid: %d\n",active->pid);
+	
+	//kprintf("new process cr3: %p\n",active->cr3);
+	
+	//kprintf("switching pid: %d\n",active->pid);
 	//while(1);
 	set_tss_rsp((void *)active->k_stack);
+	
+	change_ptable(active->cr3);
+	
+	
+	//kprintf("new process user stack content %p",
+	
 	if(active->state==0)
 	{
 		
@@ -156,6 +166,7 @@ uint64_t syscall_switch(gpr_t *reg)
 	}
 	else
 	{
+	
 		__asm__(
 		"movq %0,%%rsp;\n"
 		"popq %%r15;\n"
@@ -185,6 +196,11 @@ uint64_t syscall_switch(gpr_t *reg)
 
 uint64_t syscall_fork(gpr_t *reg)
 {
+	copy_parent_stack();
+		
+
+	
+	//kprintf("parent cr3:%p\n",parent_cr3);
 	
 	if((proc_end + 1) % 101==proc_start)
 	{
@@ -200,7 +216,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	}
 	child=&all_pro[i];
 	proc_descriptor[i]=1;
-	child->cr3=active->cr3;//to be changed later
+	child->cr3=mappageTable();  //active->cr3;//to be changed later
 	child->pid=global_pid%100;
 	global_pid++;
 	child->next=(PCB *)(child + 1);
@@ -208,10 +224,13 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->sno=i;
 	child->ppid=active->pid;
 	child->entry_point=active->entry_point;
+	child->heap_top =active->heap_top;
+	(child->mmstruct).vma_list=NULL;
 	
 	
 	
 	//while(1);
+	change_ptable(child->cr3);
 	
 	create_kstack(child);
 	copy_kstack(child);
@@ -224,7 +243,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	active->u_stack=(uint64_t)(parent_rg->usersp);
 	//kprintf("Inside forks 1234\n");
 	
-	
+	init_stack(child);
 	reg->rax=child->pid;
 	
 	//proc_Q[proc_end]=active[0];
@@ -245,7 +264,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	//kprintf("parent kstack:%p ustack:%p\n",(proc_Q + proc_start)->k_stack,(proc_Q + proc_start)->u_stack);
 	//kprintf("parent sp val:%p sp:%p\n",*(uint64_t *)parent_rg->usersp,parent_rg->usersp);
 	
-	init_stack(child);
+	
 	uint64_t stackdiff=active->k_stackbase-(uint64_t)reg;
 	child_rg=(gpr_t *)(child->k_stackbase - stackdiff);
 	
@@ -253,14 +272,17 @@ uint64_t syscall_fork(gpr_t *reg)
 	
 	
 	child_rg->usersp=child->u_stack;
+
 	//kprintf("child kstack:%p ustack:%p\n",child->k_stack,child->u_stack);
 	
 	child_rg->rax=0;
-	change_ptable(child->cr3);
+	//kprintf("child cr3: %p parent cr3: %p\n",child->cr3,active->cr3);
 	active=child;
 	//kprintf("parent kstack:%p ustack:%p\n",(proc_Q + proc_start)->k_stack,(proc_Q + proc_start)->u_stack);
 	set_tss_rsp((void *)active->k_stack);
 	//kprintf("Inside forks 1234\n");
+	
+	
 	return child->pid;
 }
 
