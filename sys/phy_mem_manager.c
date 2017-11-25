@@ -11,6 +11,7 @@
 //---------------------------------------------------------
 struct freelist_v2 {
 int next;
+int ref_count;
 }__attribute__((packed));
 
 static int totalblockcount = 0;
@@ -19,8 +20,8 @@ static int head_freelist = 0;
 static int lastfreeblock = 0;
 static int currblock = 0;
 #define PAGE_SIZE 0x1000
-#define KERNBASE 0xFFFFFFFF80000000 
-                              
+#define KERNBASE 0xFFFFFFFF80000000
+
 void printtotalFreeBlocks(){
 	kprintf("Total Free Blocks %d\n", totalblockcount);
 }
@@ -72,6 +73,7 @@ uint64_t freelist(uint64_t base, uint64_t length,uint64_t kernmem,uint64_t physb
         else
         {
 			p_list[lastfreeblock].next = currblock;
+			p_list[lastfreeblock].ref_count = 0;
 			lastfreeblock = currblock;
 			totalblockcount++;
         }
@@ -103,14 +105,35 @@ uint64_t get_page()
 	head_freelist = p_list[head_freelist].next;
 	totalblockcount--;
 
+	p_list[freeblock].ref_count++;	
 	// kprintf("returning %p\n", freeblock*PAGE_SIZE);
 	return (uint64_t)(FREEMEMORY + freeblock*PAGE_SIZE);
 }
 
+int get_reference_count(uint64_t paddr){
+	int blockindex =  (paddr >> 12 << 12 >> 12) - (FREEMEMORY >> 12 << 12 >> 12);
+	
+	return p_list[blockindex].ref_count;	
+}
 
+void increment_reference_count(uint64_t paddr){
+	int blockindex =  (paddr >> 12 << 12 >> 12) - (FREEMEMORY >> 12 << 12 >> 12);
+	
+	p_list[blockindex].ref_count++;		
+}
+
+void decrement_reference_count(uint64_t paddr){
+	int blockindex =  (paddr >> 12 << 12 >> 12) - (FREEMEMORY >> 12 << 12 >> 12);
+	
+	if (p_list[blockindex].ref_count < 1)
+	{
+		kprintf("Tring to decrement the reference count of %p below 0! Some BUG!\n", paddr);
+		return;
+	}
+	p_list[blockindex].ref_count--;			
+}
 
 void free_page(uint64_t paddr){
-
 	int blockindex =  (paddr >> 12 << 12 >> 12) - (FREEMEMORY >> 12 << 12 >> 12);
 
 	p_list[blockindex].next = head_freelist;
@@ -203,5 +226,3 @@ void free_page(uint64_t paddr){
 // 		return 0;
 // 	}
 // }
-
-
