@@ -12,6 +12,8 @@
 #include<sys/task_manager.h>
 //#include <sys/scanPCI.h>
 #include <sys/paging.h>
+#include <sys/terminal.h>
+
 
 #define INITIAL_STACK_SIZE 4096
 uint8_t initial_stack[INITIAL_STACK_SIZE]__attribute__((aligned(16)));
@@ -41,7 +43,7 @@ uint64_t kernend=(uint64_t)physfree + 4096 * 280;
  for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
       kprintf("Available Physical Memory [%p-%p %p]\n", smap->base, smap->base + smap->length,smap->length);
-      //uint64_t pagenum=smap->length/4096;
+      // uint64_t pagenum=smap->length/4096;
     freelist((uint64_t)smap->base, (uint64_t)smap->length,(uint64_t)&kernmem,(uint64_t)physbase,(uint64_t)physfree);
     }
   }
@@ -55,11 +57,12 @@ syscall_init();
 init_proc();
 
 
+
   //checkAllBuses();
 
-  //while(1){
+  while(1){
     //Dont return from start
-  //}
+  }
 }
 
 void boot(void)
@@ -76,6 +79,7 @@ void boot(void)
     :"r"(&initial_stack[INITIAL_STACK_SIZE])
   );
   
+   init_terminal();
    init_gdt();
    init_idt();
    PIC_remap((int)0x20,(int)0x28);				//In protected mode, we need to set the master PIC's offset to 0x20 and the slave's to 0x28

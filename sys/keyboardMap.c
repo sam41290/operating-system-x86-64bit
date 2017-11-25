@@ -13,13 +13,12 @@ enum{
 
 //Reference : http://wiki.osdev.org/PS2_Keyboard
 char getScancode() {
-    
-    char c=0;
-    if(inb(0x60)!=c) {
-        c=inb(0x60);
-        if(c>0){
-            return c;
-        }
+
+    char c = inb(0x60);
+    if (c >= 0)
+    {
+	    // kprintf("%p ", (int)c);
+	   	return c;
     }
 
     return (char)(0x38);					//TODO : Change this
@@ -48,7 +47,7 @@ void MakeKeyboardMapping(){
 	ScanCodeMap[(int)(0x10)] = 'q';
 	ScanCodeMap[(int)(0x14)] = 't';
 	ScanCodeMap[(int)(0x18)] = 'o';
-	ScanCodeMap[(int)(0x1C)] = '#';		//ENTER
+	ScanCodeMap[(int)(0x1C)] = '\n';		//ENTER
 	ScanCodeMap[(int)(0x20)] = 'd';
 	ScanCodeMap[(int)(0x24)] = 'j';
 	ScanCodeMap[(int)(0x28)] = '\'';
@@ -126,7 +125,6 @@ void MakeKeyboardMapping(){
 	ScanCodeMap[(int)(0x1D)] = '#';		//RCTRL
 	ScanCodeMap[(int)(0x35)] = '/';
 	ScanCodeMap[(int)(0x38)] = '#';		//RALT
-	ScanCodeMap[(int)(0x1C)] = '#';		//ENTER
 	ScanCodeMap[(int)(0x53)] = '#';		//DELETE
 	ScanCodeMap[(int)(0x4F)] = '#';		//END
 	ScanCodeMap[(int)(0x47)] = '#';		//HOME
@@ -161,6 +159,7 @@ char getchar() {
 	}    
 
 	return '#';
+
 }
 
 

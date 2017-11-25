@@ -7,6 +7,8 @@
 #include<sys/kmalloc.h>
 #include<sys/debug.h>
 #include<sys/gdt.h>
+#include <sys/terminal.h>
+#include <sys/kmalloc.h>
 
 uint64_t (*p[200])(gpr_t *reg);
 
@@ -17,6 +19,8 @@ extern uint64_t proc_descriptor[100];
 extern int proc_start;
 extern int proc_end;
 extern uint64_t global_pid;
+extern struct terminal terminal_for_keyboard;
+
 
 uint64_t dead(gpr_t *reg){
 
@@ -94,7 +98,7 @@ uint64_t k_munmap(gpr_t *reg){
 	return 0;
 }
 
-uint64_t syscall_print(gpr_t *reg)
+uint64_t temporary_printf(gpr_t *reg)
 {
 	//kprintf("execute syscall %p\n",p[0]);
 	uint64_t printval = reg->rbx;
@@ -286,13 +290,44 @@ uint64_t syscall_fork(gpr_t *reg)
 	return child->pid;
 }
 
+
+uint64_t k_read(gpr_t *reg){
+	// kprintf("Read request arrives\n");
+
+	uint64_t fd = reg->rdi;
+	if (fd == 0)
+	{
+		uint64_t buff = reg->rsi;
+		return terminal_for_keyboard.read(&terminal_for_keyboard, (uint64_t)buff);
+	}
+
+	kprintf("We dont support file pointers other than stdin stdout!!\n");
+	return 0;	
+}
+
+uint64_t k_write(gpr_t *reg){
+	// kprintf("Read request arrives\n");
+	uint64_t fd = reg->rdi;
+	if (fd == 1)
+	{
+		uint64_t buff = reg->rsi;
+		uint64_t count = reg->rdx;
+		return terminal_for_keyboard.write(&terminal_for_keyboard, (uint64_t)buff, count);
+	}
+
+	kprintf("We dont support file pointers other than stdin stdout!!\n");
+	return 0;
+}
+
 void syscall_init()
 {
 	//kprintf("iiiiiioooo\n");
-	p[0] = syscall_print;
-	p[1] = k_mmap;
-	p[2] = k_munmap;
+	p[0] = k_read;
+	p[1] = k_write;
+	p[9] = k_mmap;
+	p[11] = k_munmap;
 	p[57]= syscall_fork;
 	p[58] = syscall_switch;
+	p[99] = temporary_printf;
 }
 

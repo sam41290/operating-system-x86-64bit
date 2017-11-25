@@ -1,12 +1,13 @@
-#include<stdio.h>
-#include<sys/kprintf.h>
-#include<sys/task_manager.h>
+#include <stdio.h>
+#include <sys/kprintf.h>
+#include <sys/task_manager.h>
 void test()
 {
-int a=123;
+// int a=123;
 //kprintf("b");
-a=printf("hello world!!!%d\n",a);
-kprintf("%d",a);
+//use puts
+// a=printf("hello world!!!%d\n",a);
+// kprintf("%d",a);
 while(1);
 return;
 }

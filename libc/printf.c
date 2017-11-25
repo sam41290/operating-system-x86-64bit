@@ -1,3 +1,7 @@
+
+
+
+
 #include <stdarg.h>
 #include <sys/defs.h>
 #include<sys/kprintf.h>
@@ -11,7 +15,7 @@ void printfflushchar(const char ch)
 	
 	uint64_t arg=(uint64_t)ch;
 	
-	unsigned long syscallnumber=0;
+	unsigned long syscallnumber=99;
 	
 	//kprintf("%d",syscallnumber);
 	
@@ -34,7 +38,7 @@ void printfflushNewLine(){
 	
 	char ch='\n';
 	
-	unsigned long syscallnumber=0;
+	unsigned long syscallnumber=99;
 	
 	unsigned long arg=(uint64_t)ch;
 	__asm__(
@@ -52,7 +56,7 @@ int printfflush()
 {
 	uint64_t arg=(uint64_t)(&args);
 	
-	unsigned long syscallnumber=0;
+	unsigned long syscallnumber=99;
 	
 	//kprintf("%d",syscallnumber);
 	
