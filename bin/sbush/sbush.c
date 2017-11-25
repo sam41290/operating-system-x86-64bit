@@ -175,9 +175,8 @@ void TESTCONTEXTSWITCH(){
 	 pid=fork();
 	 if(pid > 0)
 	 {
-		 // printf("I am parent\n");
+		 printf("I am parent %d\n",a);
 		 yield();
-		 // printf("I am parent 1.0\n");
 		 printf("I am parent %d\n",a);
 		 yield();
 		 //printf("I am parent 1.0\n");
@@ -187,11 +186,12 @@ void TESTCONTEXTSWITCH(){
 	 }
 	 if(pid==0)
 	 {
-		 // printf("I am child 1\n");
+		 printf("I am child %d\n",a);
+		 a=a+1;
 		 yield();
-		 // printf("I am child 1.0\n");
+		 printf("I am child %d\n",a);
 		 yield();
-		 // printf("I am child 1.1\n");
+		 printf("I am child 1.1\n");
 		 while(1);
 	 }
 }
@@ -228,9 +228,9 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	// TESTTERMINAL();
 
-	TESTMALLOC();
+	//TESTMALLOC();
 	
-	// TESTCONTEXTSWITCH();
+	 TESTCONTEXTSWITCH();
 	 
 	while(1);
 }
