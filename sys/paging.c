@@ -71,7 +71,7 @@ void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t ke
 	
 	kernelpage[p4_index + j]=((uint64_t)cur_disp & 0xFFFFFFFFFF000) | 7;
 	
-	
+	// blankpage();
 	__asm__(
 	"movq %0,%%rax;\n"
 	"movq %%rax,%%cr3;\n"
@@ -81,6 +81,7 @@ void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t ke
 	(video)=(char *)(((uint64_t)kernmem + 4096 * j) | ((uint64_t)video & 0xfff));
 	
 	(videostart)=(char *)((uint64_t)kernmem + 4096 * j);
+	// resetdatawritten();
 	
 	kern_VA=(uint64_t)kernmem + 4096 * (j+2);
 	

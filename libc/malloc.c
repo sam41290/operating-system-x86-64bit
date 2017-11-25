@@ -5,7 +5,7 @@
 
 void *malloc(uint64_t size){
 
-	unsigned long syscallnumber = 1;
+	unsigned long syscallnumber = 9;
 	void *addr = NULL;
 	uint64_t length = size;
 	int prot = 1|2;//PROT_READ;
@@ -37,7 +37,7 @@ void free(void *ptr)
 
 	uint64_t len=sizeof(*ptr);
 
-	unsigned long syscallnumber = 2;
+	unsigned long syscallnumber = 11;
 
 	  __asm__(
 	                "movq %0, %%rax;\n"

@@ -5,11 +5,12 @@
 #include <sys/virt_mem.h>
 #include <sys/idt.h>
 #include <sys/error.h>
+#include <sys/terminal.h>
 
 extern uint64_t (*p[200])(gpr_t *reg);
 extern uint64_t RING_0_MODE;
 
-
+struct terminal terminal_for_keyboard;
 
 uint64_t sys_call(gpr_t *reg)
 {
@@ -78,7 +79,7 @@ void pagemama(void)
 		kprintf("address: %p\n",addr);
 	    while(1);
 	}
-    //kprintf("address: %p\n",addr);
+    // kprintf("address: %p\n",addr);
 
 	if (RING_0_MODE == 1)
 	{
@@ -128,8 +129,8 @@ void protection_fault()
      ThrowSecurityError(cr2);
 }
 
-void keymama(void)
-{
+void WP2Keyboard(){
+
 	// IRQ_set_mask('1');
 	char c = getchar();
 	if (c != '#')
@@ -146,4 +147,10 @@ void keymama(void)
 	}
 	
 	// IRQ_clear_mask('1');
+
+}
+
+void keymama(void)
+{
+	terminal_for_keyboard.tunnel(&terminal_for_keyboard);
 }

@@ -10,5 +10,8 @@ void setcurrdisp();
 void kprintf(const char *fmt, ...);
 void flushtime(int seconds);
 void flushLastKeyPress(char a, char b);
-
+void flushchar(const char ch);
+void flushbackspace();
+void blankpage();
+void resetdatawritten();
 #endif

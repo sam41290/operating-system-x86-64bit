@@ -8,6 +8,10 @@ char *videostart=(char*)0xb8000;
 
 static long data_written = 0;
 
+void resetdatawritten(){
+	data_written = 0;
+}
+
 char *getcurrdisp()
 {
 kprintf("returning video: %p",video);
@@ -70,7 +74,6 @@ void flushtime(int seconds)
 }
 
 void checkForScroll(){
-
 	if (data_written >= 80*24)		//Last line for clock and keypress
 	{
 		int shift = 160*12;
@@ -113,6 +116,20 @@ void checkForScroll(){
 	}
 }
 
+void flushbackspace(){
+
+	if (data_written == 0)
+	{
+		return;
+	}
+	video = video-2;
+    *video++ = ' ';
+    *video++ = 7;
+    video = video-2;
+    data_written--;
+
+}
+
 
 void flush(const char* text)
 {
@@ -136,6 +153,7 @@ void flush(const char* text)
 void flushchar(const char ch)
 {
 	checkForScroll();
+
     *video++ = ch;
     *video++ = 7;
     data_written++;
@@ -269,4 +287,15 @@ void kprintf(const char *fmt, ...)
        	fmt++;
     }
     va_end(ap);
+}
+
+void blankpage(){
+
+	video = videostart;
+	data_written = 0;
+	while(video <= videostart + 160*24){
+		*video++ = ' ';
+		*video++ = 7;
+	}
+	video = videostart;
 }

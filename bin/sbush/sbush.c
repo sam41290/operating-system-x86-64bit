@@ -35,38 +35,49 @@ void dummysyscall(){
 	:"=m"(ret)
 	:
 	);
-	printf("Returned From dummysyscall %d\n", ret);
+	// printf("Returned From dummysyscall %d\n", ret);
 	return;
+}
+
+void testread(){
+
+	uint64_t syscallnumber = 3;
+	__asm__(
+	"movq %0,%%rax;\n"
+	"int $0x80;\n"
+	:
+	:"m"(syscallnumber)
+	);	
 }
 
 void TESTMALLOC(){
 
-{
-	int* trymalloc = (int*)malloc(2048*sizeof(int));
-	// printf("add malloc %p\n", trymalloc);	
-	trymalloc[0] = 1;
-	printf("malloc success %d\n", trymalloc[0]);
-	trymalloc[2047] = 2;
-	printf("malloc success %d\n", trymalloc[2047]);
+// {
+	// int* trymalloc = (int*)malloc(2048*sizeof(int));
+	// // printf("add malloc %p\n", trymalloc);	
+	// trymalloc[0] = 1;
+	// printf("malloc success %d\n", trymalloc[0]);
+	// trymalloc[2047] = 2;
+	// printf("malloc success %d\n", trymalloc[2047]);
 
 
-	free(trymalloc);
+	// free(trymalloc);
 
 
-	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
-	trymalloc2[0] = 1;
+	// int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+	// trymalloc2[0] = 1;
 
-	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
-	trymalloc3[0] = 1;
+	// int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+	// trymalloc3[0] = 1;
 
-	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
-	trymalloc4[0] = 1;
+	// int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+	// trymalloc4[0] = 1;
 
-	free(trymalloc2);
-	free(trymalloc3);
-	free(trymalloc4);	
+	// free(trymalloc2);
+	// free(trymalloc3);
+	// free(trymalloc4);	
 
-}
+// }
 
 // {
 // 	// 23557 blocks ~ 90+ MB
@@ -161,40 +172,56 @@ void TESTCONTEXTSWITCH(){
 	 pid=fork();
 	 if(pid > 0)
 	 {
-		 printf("I am parent\n");
+		 // printf("I am parent\n");
 		 yield();
-		 printf("I am parent 1.0\n");
+		 // printf("I am parent 1.0\n");
 		 yield();
 		 while(1);
 		
 	 }
 	 if(pid==0)
 	 {
-		 printf("I am child 1\n");
+		 // printf("I am child 1\n");
 		 yield();
-		 printf("I am child 1.0\n");
+		 // printf("I am child 1.0\n");
 		 yield();
-		 printf("I am child 1.1\n");
+		 // printf("I am child 1.1\n");
 		 while(1);
 	 }
 }
 
+void TESTTERMINAL(){
+
+	puts("Hi how are puts working fine! Enter some text \n");
+
+	char* buff = (char*)malloc(1024*sizeof(char));
+	gets(buff);
+
+	puts(buff);
+
+	puts("You entered ");
+	puts(buff);
+	puts("\n");
+	free(buff);
+
+
+	printf("Hi I am back to the good world\n");	
+
+	char* num = (char*)malloc(1024*sizeof(char));
+	puts("Enter a number\n");
+	gets(num);
+	puts("You entered");puts(num);
+	
+}
+
+
 int main(int argc, char *argv[], char *envp[]) {
 
-	int a=10;
-	// printf("sbush> %d\n",a);
-	a=a+1;
+	puts("sbush> Hello World!!");
 
-	a=printf("sbush> %d\n",a);
-	//a=a+1;
+	TESTTERMINAL();
 
-	printf("hello world!!! %d\n",a);
-
-	// dummysyscall();
-
-	TESTMALLOC();
-
-	//dummysyscall();
+	// TESTMALLOC();
 	
 	// TESTCONTEXTSWITCH();
 
