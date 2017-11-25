@@ -40,6 +40,18 @@ uint64_t proc_descriptor[100];
 
 uint64_t kstackbase;
 
+uint64_t cow_page[512];
+
+uint8_t parent_stack[4096];
+
+void copy_parent_stack()
+{
+	uint8_t *parent_stackbase=(uint8_t *)active->u_stackbase;
+	for (int i=0;i<4096;i++)
+	{
+		parent_stack[i]=*(parent_stackbase - i);
+	}
+}
 
 PCB *get_nextproc()
 {
@@ -57,9 +69,15 @@ PCB *get_nextproc()
 void init_stack(PCB *proc)
 {
 	int i;
+	uint64_t top=(ustacktop -(4096 * proc->sno)) & 0xFFFFFFFFFFFFF000;
+
+	
 	if(proc->pid==0)
 	{
-		uint64_t top=(ustacktop -(4096)) & 0xFFFFFFFFFFFFF000;
+		//uint64_t top=(ustacktop -(4096)) & 0xFFFFFFFFFFFFF000;
+		//unmap_phyaddr(top);
+		//
+		//kprintf("phys stack: %p\n",phys_stack);
 		//kprintf("\nfrom init top pid=0: %p\n",top);
 		for(i=0;i<=4096;i++)
 		{
@@ -70,27 +88,30 @@ void init_stack(PCB *proc)
 	}
 	else
 	{	//kprintf("\nfrom init active->u_stackbase: %p %p\n",active->u_stack,*((uint64_t *)(active->u_stackbase-1)));
-		uint64_t  top=(uint64_t )active->u_stack;
+		//top=(uint64_t )active->u_stack;
 		
-		top=(top -(4096)) & 0xFFFFFFFFFFFFF000;
+		//top=(top -(4096)) & 0xFFFFFFFFFFFFF000;
+		
+		
+		//unmap_phyaddr(top);
+		//map_phyaddr(top);
+		//kprintf("phys stack: %p\n",phys_stack);
+		//ctr=1;
 		proc->u_stackbase=top;
-		uint64_t parent_stackbase=(uint64_t )active->u_stackbase;
+		uint64_t parent_stackbase=active->u_stackbase;
 		//kprintf("\nfrom init top: %p\n",top);
-		for(i=0;i<=4096;i++)
+		for(i=0;i<4096;i++)
 		{
 			if(parent_stackbase>=active->u_stack)
 			{
-				*((uint8_t *)(top))=*((uint8_t *)parent_stackbase);
 				proc->u_stack=top;
 			}
-			else
-				*((uint8_t *)(top))=0;
+			*((uint8_t *)(top))=parent_stack[i];
 			top--;
 			parent_stackbase--;
 		}
 		//proc->u_stack;
-		//kprintf("\nfrom init base: %p %p\n",proc->u_stack,*((uint64_t *)proc->u_stack));
-		
+		//kprintf("\nfrom init base: %p %p\n",proc->u_stack,*((uint64_t *)proc->u_stack));	
 	}
 	
 	return;
@@ -116,9 +137,11 @@ uint64_t mappageTable()
 
 	uint64_t *p1=(uint64_t *)base;
 	
-	for(int i=0;i<512;i++)
+	for(int i=0;i<510;i++)
 	{
 		v_pml4[i]=0x0;
+		if(p1[i]!=0x0)
+			v_pml4[i]=(p1[i] & 0xFFFFFFFFFFFFF000) | 5;
 	}
 	v_pml4[511]=p1[511];
 	v_pml4[510]=(p_pml4 & 0xFFFFFFFFFFFFF000) | 7;
@@ -126,6 +149,101 @@ uint64_t mappageTable()
 	//kprintf("old 511: %p\n",(p1[511] & 0xFFFFFFFFFFFFF000) | 7);
 	//while(1);
 	return p_pml4;
+}
+
+void change_ptable(uint64_t addr)
+{
+	uint64_t pml4=addr;
+	__asm__(
+	"movq %0,%%rax;\n"
+	"movq %%rax,%%cr3;\n"
+	:
+	:"g"(pml4)
+	);
+	
+	//while(1);
+	return;
+}
+
+int check_cow(uint64_t addr)
+{
+	
+	uint64_t p1_index = (addr << 16) >> (9 + 9 + 9 + 12 + 16);
+	uint64_t p2_index = (addr << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
+	uint64_t p3_index = (addr << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
+	uint64_t p4_index = (addr << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
+	
+	
+	uint64_t base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|p1_index)<<30;
+    base=(((base >> 30)<<9)|p2_index)<<21;
+    base=(((base >> 21)<<9)|p3_index)<<12;
+	
+	uint64_t *p4=(uint64_t *)base;
+	
+	base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|0x1FE)<<30;
+    base=(((base >> 30)<<9)|0x1FE)<<21;
+    base=(((base >> 21)<<9)|0x1FE)<<12;
+	
+	uint64_t *p1=(uint64_t *)base;
+	
+	//kprintf("%p\n",p1[p1_index]);
+	if(p4[p4_index]!=0 && (p1[p1_index] & 0b111)==5)
+	{
+		
+		return 1;
+	}
+	
+	return 0;
+}
+
+void cow(uint64_t addr)
+{
+	uint64_t *cow_addr=(uint64_t *)addr;
+	
+	for(int i=0;i<512;i++)
+		cow_page[i]=cow_addr[i];
+	
+	uint64_t p1_index = (addr << 16) >> (9 + 9 + 9 + 12 + 16);
+	uint64_t p2_index = (addr << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
+	uint64_t p3_index = (addr << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
+	uint64_t p4_index = (addr << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
+	
+	
+	uint64_t base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|p1_index)<<30;
+    base=(((base >> 30)<<9)|p2_index)<<21;
+    base=(((base >> 21)<<9)|p3_index)<<12;
+	
+	uint64_t *p4=(uint64_t *)base;
+	
+	base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|0x1FE)<<30;
+    base=(((base >> 30)<<9)|0x1FE)<<21;
+    base=(((base >> 21)<<9)|0x1FE)<<12;
+	
+	uint64_t *p1=(uint64_t *)base;
+	
+	p1[p1_index]=(p1[p1_index]  & 0xFFFFFFFFFFFFF000) | 7;
+	
+	uint64_t padd=get_page();
+	
+	p4[p4_index]=(padd & 0xFFFFFFFFFFFFF000) | 7;
+	flushTLB();
+	for(int i=0;i<512;i++)
+		cow_addr[i]=cow_page[i];
+	
+	return;
+	
 }
 
 void kernel_switch_to()
@@ -208,19 +326,7 @@ void kernel_switch_to()
 }
 
 
-void change_ptable(uint64_t addr)
-{
-	uint64_t pml4=addr;
-	__asm__(
-	"movq %0,%%rax;\n"
-	"movq %%rax,%%cr3;\n"
-	:
-	:"g"(pml4)
-	);
-	
-	//while(1);
-	return;
-}
+
 
 void init_kstack()
 {
@@ -333,7 +439,7 @@ void init_proc()
 	proc_start=proc_start + 1;
 	active->state=1;
 
-	kprintf("user stack: %p\n",active->u_stack);
+	//kprintf("user stack: %p\n",active->u_stack);
 	
 	set_tss_rsp((void *)active->k_stack);
 	

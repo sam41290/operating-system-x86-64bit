@@ -1,6 +1,7 @@
 #include <sys/kprintf.h>
 #include <sys/Utils.h>
 #include<sys/phy_mem_manager.h>
+#include<sys/task_manager.h>
 #include<sys/paging.h>
 #include <sys/virt_mem.h>
 #include <sys/idt.h>
@@ -58,7 +59,7 @@ void timemama(void)
 int ctr=0;
 
 extern PCB *active;
-void pagemama(void)
+void pagemama(registers_t reg)
 {
 	//ctr ++;
 	
@@ -102,13 +103,29 @@ void pagemama(void)
 		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
 		if(map_phyaddr(addr)==-1)
 		{
-			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);
+			kprintf("\nERROR: Can not allocate phy &sical page for %p\n", addr);
 			while(1);	
 		}		
 	}
+	/*else if(active->pid > 0 && check_cow(addr)==1)
+	{
+		//kprintf("cow invoked\n");
+		cow(addr);
+	}*/
 	else
 	{
-		ThrowSegmentationFault(addr);	
+		int chk=0;
+		if(reg.err_code==7)
+		{
+			chk=check_cow(addr);
+			if(chk==1)
+				cow(addr);
+		}
+		else
+		{
+			kprintf("error code: %p\n",reg.err_code);
+			ThrowSegmentationFault(addr);
+		}
 	}
 
 
