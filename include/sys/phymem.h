@@ -9,9 +9,9 @@
 #define PAGE_SIZE 0x1000
 #define KERNBASE 0xFFFFFFFF80000000
 
-struct freelist {
-int next;
-}__attribute__((packed));
+// struct freelist {
+// int next;
+// }__attribute__((packed));
 
 void flushTLB();
 uint64_t p_allocblock();

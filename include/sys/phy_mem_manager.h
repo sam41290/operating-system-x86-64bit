@@ -5,3 +5,6 @@ uint64_t freelist(uint64_t base, uint64_t length,uint64_t kernmem,uint64_t physb
 uint64_t get_page();
 void free_page();
 void printtotalFreeBlocks();
+int get_reference_count(uint64_t paddr);
+void increment_reference_count(uint64_t paddr);
+void decrement_reference_count(uint64_t paddr);

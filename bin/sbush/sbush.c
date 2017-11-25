@@ -52,32 +52,32 @@ void testread(){
 
 void TESTMALLOC(){
 
-{
-	int* trymalloc = (int*)malloc(2048*sizeof(int));
-	// printf("add malloc %p\n", trymalloc);	
-	trymalloc[0] = 1;
-	printf("malloc success %d\n", trymalloc[0]);
-	trymalloc[2047] = 2;
-	printf("malloc success %d\n", trymalloc[2047]);
+// {
+// 	int* trymalloc = (int*)malloc(2048*sizeof(int));
+// 	// printf("add malloc %p\n", trymalloc);	
+// 	trymalloc[0] = 1;
+// 	printf("malloc success %d\n", trymalloc[0]);
+// 	trymalloc[2047] = 2;
+// 	printf("malloc success %d\n", trymalloc[2047]);
 
 
-	free(trymalloc);
+// 	free(trymalloc);
 
 
-	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
-	trymalloc2[0] = 1;
+// 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc2[0] = 1;
 
-	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
-	trymalloc3[0] = 1;
+// 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc3[0] = 1;
 
-	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
-	trymalloc4[0] = 1;
+// 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc4[0] = 1;
 
-	free(trymalloc2);
-	free(trymalloc3);
-	free(trymalloc4);	
+// 	free(trymalloc2);
+// 	free(trymalloc3);
+// 	free(trymalloc4);	
 
-}
+// }
 
 // {
 // 	// 23557 blocks ~ 90+ MB
@@ -92,6 +92,7 @@ void TESTMALLOC(){
 // }
 
 // {
+// 	//Allocated 545269 857f8000 545269
 // 	int kill = 0;
 // 	while(1){
 // 		int* killme = (int*)malloc(1000*sizeof(int));
@@ -116,6 +117,7 @@ void TESTMALLOC(){
 
 // {
 // 	//Page table for virtual address take space so not infinite. Need to reuse virtual address to make this work
+// 	// Allocated 69093 8752b000
 // 	int kill = 0;
 // 	while(1){
 // 		int* killme = (int*)malloc(8000*sizeof(int));
@@ -226,7 +228,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	// TESTTERMINAL();
 
-	// TESTMALLOC();
+	TESTMALLOC();
 	
 	// TESTCONTEXTSWITCH();
 	 
