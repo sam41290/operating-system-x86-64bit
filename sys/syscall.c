@@ -119,23 +119,25 @@ uint64_t syscall_switch(gpr_t *reg)
 {
 	//kprintf("\nhere\n");
 
-	
-	(proc_Q + proc_end)->sno         =active->sno;        
-	(proc_Q + proc_end)->pid         =active->pid;        
-	(proc_Q + proc_end)->ppid        =active->ppid ;      
-	(proc_Q + proc_end)->entry_point =active->entry_point;
-	(proc_Q + proc_end)->u_stackbase =active->u_stackbase;
-	(proc_Q + proc_end)->k_stackbase =active->k_stackbase;
-	(proc_Q + proc_end)->cr3         =active->cr3 ;       
-	(proc_Q + proc_end)->mmstruct    =active->mmstruct;   
-	(proc_Q + proc_end)->heap_top    =active->heap_top;   
-	(proc_Q + proc_end)->next        = proc_Q + proc_end + 1;     
-	
-	(proc_Q + proc_end)->k_stack=(uint64_t)reg;
-	(proc_Q + proc_end)->u_stack=reg->usersp;
-	(proc_Q + proc_end)->state=1;
-	
-	proc_end=proc_end + 1;
+	if(active!=NULL)
+	{
+		(proc_Q + proc_end)->sno         =active->sno;        
+		(proc_Q + proc_end)->pid         =active->pid;        
+		(proc_Q + proc_end)->ppid        =active->ppid ;      
+		(proc_Q + proc_end)->entry_point =active->entry_point;
+		(proc_Q + proc_end)->u_stackbase =active->u_stackbase;
+		(proc_Q + proc_end)->k_stackbase =active->k_stackbase;
+		(proc_Q + proc_end)->cr3         =active->cr3 ;       
+		(proc_Q + proc_end)->mmstruct    =active->mmstruct;   
+		(proc_Q + proc_end)->heap_top    =active->heap_top;   
+		(proc_Q + proc_end)->next        = proc_Q + proc_end + 1;     
+		
+		(proc_Q + proc_end)->k_stack=(uint64_t)reg;
+		(proc_Q + proc_end)->u_stack=reg->usersp;
+		(proc_Q + proc_end)->state=1;
+		
+		proc_end=proc_end + 1;
+	}
 	PCB *p_to=get_nextproc();
 	active=p_to;
 	//kprintf("old process user stack: %p\n",reg);
@@ -195,6 +197,24 @@ uint64_t syscall_switch(gpr_t *reg)
 		return 0;
 		
 	}
+	return 0;
+}
+
+uint64_t syscall_exit(gpr_t *reg)
+{
+	//kprintf("in exit\n");
+	all_pro[active->sno].state=0;
+	proc_descriptor[active->sno]=0;
+	all_pro[active->sno].cr3=0;
+	vma *last_vma=(active->mmstruct).vma_list;
+	while(last_vma != NULL)
+	{
+		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
+		last_vma = last_vma->nextvma;
+	}
+	active=NULL;
+	//kprintf("calling switch\n");
+	syscall_switch(reg);
 	return 0;
 }
 
@@ -329,6 +349,7 @@ void syscall_init()
 	p[11] = k_munmap;
 	p[57]= syscall_fork;
 	p[58] = syscall_switch;
+	p[60] = syscall_exit;
 	p[99] = temporary_printf;
 }
 

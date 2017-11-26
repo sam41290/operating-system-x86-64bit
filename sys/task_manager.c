@@ -238,13 +238,6 @@ void copy_vma(PCB *proc)
 }
 
 
-void proc_exit(PCB *proc)
-{
-	all_pro[proc->sno].state=0;
-	proc_descriptor[proc->sno]=0;
-	all_pro[proc->sno].cr3=0;
-}
-
 
 
 void cow(uint64_t addr)

@@ -196,6 +196,35 @@ void TESTCONTEXTSWITCH(){
 	 }
 }
 
+void TESTEXIT(){
+
+	int a=5;
+	pid_t pid;
+	pid=fork();
+	if(pid > 0)
+	{
+	 printf("I am parent %d\n",a);
+	 yield();
+	 printf("I am parent %d\n",a);
+	 yield();
+	 //printf("I am parent 1.0\n");
+	 //yield();
+	 //while(1);
+	
+	}
+	if(pid==0)
+	{
+	 printf("I am child %d\n",a);
+	 a=a+1;
+	 yield();
+	 printf("I am child %d\n",a);
+	 yield();
+	 printf("I am child 1.1\n");
+	 exit(0);
+	}
+	printf("my child is dead %d\n",pid);
+}
+
 void TESTTERMINAL(){
 
 	puts("Hi how are puts working fine! Enter some text \n");
@@ -226,11 +255,37 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!");
 
-	 TESTTERMINAL();
+	 //TESTTERMINAL();
 
 	//TESTMALLOC();
 	
-	 TESTCONTEXTSWITCH();
+	 //TESTCONTEXTSWITCH();
+	 //TESTEXIT();
+	 int a=5;
+	pid_t pid;
+	pid=fork();
+	if(pid > 0)
+	{
+	 printf("I am parent %d\n",a);
+	 yield();
+	 printf("I am parent %d\n",a);
+	 yield();
+	 //printf("I am parent 1.0\n");
+	 //yield();
+	 //while(1);
+	
+	}
+	if(pid==0)
+	{
+	 printf("I am child %d\n",a);
+	 a=a+1;
+	 yield();
+	 printf("I am child %d\n",a);
+	 yield();
+	 printf("I am child 1.1\n");
+	 return 0;
+	}
+	printf("my child is dead %d\n",pid);
 	 
 	while(1);
 }
