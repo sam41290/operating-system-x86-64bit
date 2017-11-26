@@ -486,7 +486,7 @@ void init_proc()
      "pushq $0x23;\n"
      "pushq %0;\n"
      "pushf;\n"
-     "pushq $0x1B;\n"
+     "pushq $0x2B;\n"
      "pushq %1;\n"
 	 "iretq;\n"
 	 :
