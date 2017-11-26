@@ -226,7 +226,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!");
 
-	// TESTTERMINAL();
+	 TESTTERMINAL();
 
 	//TESTMALLOC();
 	

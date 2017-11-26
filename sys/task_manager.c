@@ -116,6 +116,8 @@ uint64_t mappageTable()
 	
 	
 	uint64_t p_pml4=map_phyaddr((uint64_t)v_pml4);
+	
+	p_pml4=p_pml4 & 0xFFFFFFFFFFFFF000;
 	//kprintf("\np_pml4:%p\n",p_pml4);
 	uint64_t base=0xFFFF000000000000;
 
@@ -190,6 +192,60 @@ int check_cow(uint64_t addr)
 	
 	return 0;
 }
+
+
+void increment_childpg_ref(uint64_t vaddr_start,uint64_t vaddr_end)
+{
+	uint64_t marked=0;
+	while (vaddr_start <= vaddr_end)
+	{
+	
+		uint64_t p1_index = (vaddr_start << 16) >> (9 + 9 + 9 + 12 + 16);
+		uint64_t p2_index = (vaddr_start << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
+		uint64_t p3_index = (vaddr_start << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
+		uint64_t p4_index = (vaddr_start << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
+		
+		
+		uint64_t base=0xFFFF000000000000;
+	
+		base=(((base >> 48)<<9)|0x1FE)<<39;
+		base=(((base >> 39)<<9)|p1_index)<<30;
+		base=(((base >> 30)<<9)|p2_index)<<21;
+		base=(((base >> 21)<<9)|p3_index)<<12;
+		
+		uint64_t *p4=(uint64_t *)base;
+		uint64_t paddr=p4[p4_index];
+		if(paddr != marked)
+		{
+			increment_reference_count(paddr);
+			marked=paddr;
+		}
+		vaddr_start++;
+	}
+	
+}
+
+void copy_vma(PCB *proc)
+{
+	vma *last_vma=(active->mmstruct).vma_list;
+	while(last_vma != NULL)
+	{
+		vma *new_vma=alloc_vma(last_vma->vstart, last_vma->vend);
+		append_to_vma_list(proc,new_vma);
+		increment_childpg_ref(last_vma->vstart, last_vma->vend);
+		last_vma = last_vma->nextvma;
+	}
+}
+
+
+void proc_exit(PCB *proc)
+{
+	all_pro[proc->sno].state=0;
+	proc_descriptor[proc->sno]=0;
+	all_pro[proc->sno].cr3=0;
+}
+
+
 
 void cow(uint64_t addr)
 {

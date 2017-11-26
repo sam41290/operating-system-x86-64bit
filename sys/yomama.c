@@ -98,22 +98,8 @@ void pagemama(registers_t reg)
 	//Check for address in process vma list
 	if (IsPageInVmaList(active, addr) == 1)
 	{
-		//Page fault is valid as it had requested for malloc earlier.
-		//Allocate physical page
-		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
-		if(map_phyaddr(addr)==-1)
-		{
-			kprintf("\nERROR: Can not allocate phy &sical page for %p\n", addr);
-			while(1);	
-		}		
-	}
-	/*else if(active->pid > 0 && check_cow(addr)==1)
-	{
-		//kprintf("cow invoked\n");
-		cow(addr);
-	}*/
-	else
-	{
+		//check for cow
+		
 		int chk=0;
 		if(reg.err_code==7)
 		{
@@ -123,9 +109,21 @@ void pagemama(registers_t reg)
 		}
 		else
 		{
-			kprintf("error code: %p\n",reg.err_code);
-			ThrowSegmentationFault(addr);
+			//Page fault is valid as it had requested for malloc earlier.
+			//Allocate physical page
+			addr = (addr >> 12 << 12);	//Page Align for newly allocated page
+			if(map_phyaddr(addr)==-1)
+			{
+				kprintf("\nERROR: Can not allocate phy &sical page for %p\n", addr);
+				while(1);	
+			}
 		}
+	}
+	else
+	{
+		kprintf("error code: %p\n",reg.err_code);
+		ThrowSegmentationFault(addr);
+		
 	}
 
 

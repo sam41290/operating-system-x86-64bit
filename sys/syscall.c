@@ -221,7 +221,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	child=&all_pro[i];
 	proc_descriptor[i]=1;
 	child->cr3=mappageTable();  //active->cr3;//to be changed later
-	child->pid=global_pid%100;
+	child->pid=global_pid;
 	global_pid++;
 	child->next=(PCB *)(child + 1);
 	child->state=1;
@@ -230,6 +230,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->entry_point=active->entry_point;
 	child->heap_top =active->heap_top;
 	(child->mmstruct).vma_list=NULL;
+	copy_vma(child);
 	
 	
 	
