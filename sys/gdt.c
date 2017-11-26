@@ -1,5 +1,6 @@
 #include <sys/defs.h>
 #include <sys/gdt.h>
+#include<sys/kprintf.h>
 
 /* adapted from Chris Stones, shovelos */
 
