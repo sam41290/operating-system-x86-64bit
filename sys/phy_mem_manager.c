@@ -7,7 +7,7 @@
 #include <sys/Utils.h>
 #include <sys/idt.h>
 #include <sys/error.h>
-#include <sys/debug.h>
+
 //---------------------------------------------------------
 struct freelist_v2 {
 int next;
@@ -226,5 +226,3 @@ void free_page(uint64_t paddr){
 // 		return 0;
 // 	}
 // }
-
-

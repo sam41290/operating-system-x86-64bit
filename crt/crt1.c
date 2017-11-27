@@ -6,6 +6,6 @@ void _start(void) {
     char* argv[10];
     char* envp[10];
     main(argc, argv, envp);
-
+	exit(0);
   // call main() and exit() here
 }

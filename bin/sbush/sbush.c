@@ -177,9 +177,8 @@ void TESTCONTEXTSWITCH(){
 	 pid=fork();
 	 if(pid > 0)
 	 {
-		 // printf("I am parent\n");
+		 printf("I am parent %d\n",a);
 		 yield();
-		 // printf("I am parent 1.0\n");
 		 printf("I am parent %d\n",a);
 		 yield();
 		 //printf("I am parent 1.0\n");
@@ -189,13 +188,43 @@ void TESTCONTEXTSWITCH(){
 	 }
 	 if(pid==0)
 	 {
-		 // printf("I am child 1\n");
+		 printf("I am child %d\n",a);
+		 a=a+1;
 		 yield();
-		 // printf("I am child 1.0\n");
+		 printf("I am child %d\n",a);
 		 yield();
-		 // printf("I am child 1.1\n");
+		 printf("I am child 1.1\n");
 		 while(1);
 	 }
+}
+
+void TESTEXIT(){
+
+	int a=5;
+	pid_t pid;
+	pid=fork();
+	if(pid > 0)
+	{
+	 printf("I am parent %d\n",a);
+	 yield();
+	 printf("I am parent %d\n",a);
+	 yield();
+	 //printf("I am parent 1.0\n");
+	 //yield();
+	 //while(1);
+	
+	}
+	if(pid==0)
+	{
+	 printf("I am child %d\n",a);
+	 a=a+1;
+	 yield();
+	 printf("I am child %d\n",a);
+	 yield();
+	 printf("I am child 1.1\n");
+	 exit(0);
+	}
+	printf("my child is dead %d\n",pid);
 }
 
 void TESTTERMINAL(){
@@ -252,18 +281,16 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!");
 
-	//int *a=(int *)malloc(10*sizeof(int));
 
-	//a[0]=1;
-
-
-	TESTVFS();
+	// TESTVFS();
 
 	//TESTTERMINAL();
 
 	// TESTMALLOC();
 	
 	// TESTCONTEXTSWITCH();
+
+	// TESTEXIT();
 	 
 	while(1);
 }

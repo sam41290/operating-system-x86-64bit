@@ -51,7 +51,7 @@ int check_cow(uint64_t addr);
 void cow(uint64_t addr);
 void copy_parent_stack();
 uint64_t mappageTable();
-
+void copy_vma(PCB *proc);
 void context1();
 
 void context2();

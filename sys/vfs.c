@@ -98,7 +98,7 @@ void init_tarfs(){
     	uint64_t dataStart = (uint64_t)(header+1); uint64_t datEnd = (uint64_t)(header+1+size);
     	if ((strlen(header->name) > 0) && (header->size[0]!='\0'))
     	{
-	   		kprintf("Found %s %s %d!!\n", header->name, header->typeflag, size);
+	   		// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, size);
     		if (strncmp(header->name, "lib/", 4) != 0)	//Dont parse libc folder. Some bug in printf
     		{
 	    		if (header->typeflag[0] == '0')
