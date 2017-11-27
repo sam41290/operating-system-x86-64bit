@@ -52,32 +52,32 @@ void testread(){
 
 void TESTMALLOC(){
 
-// {
-// 	int* trymalloc = (int*)malloc(2048*sizeof(int));
-// 	// printf("add malloc %p\n", trymalloc);	
-// 	trymalloc[0] = 1;
-// 	printf("malloc success %d\n", trymalloc[0]);
-// 	trymalloc[2047] = 2;
-// 	printf("malloc success %d\n", trymalloc[2047]);
+ {
+ 	int* trymalloc = (int*)malloc(2048*sizeof(int));
+ 	// printf("add malloc %p\n", trymalloc);	
+ 	trymalloc[0] = 1;
+ 	printf("malloc success %d\n", trymalloc[0]);
+ 	trymalloc[2047] = 2;
+ 	printf("malloc success %d\n", trymalloc[2047]);
 
 
-// 	free(trymalloc);
+ 	free(trymalloc);
 
 
-// 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc2[0] = 1;
+ 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+ 	trymalloc2[0] = 1;
 
-// 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc3[0] = 1;
+ 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+ 	trymalloc3[0] = 1;
 
-// 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc4[0] = 1;
+ 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+ 	trymalloc4[0] = 1;
 
-// 	free(trymalloc2);
-// 	free(trymalloc3);
-// 	free(trymalloc4);	
+ 	free(trymalloc2);
+ 	free(trymalloc3);
+ 	free(trymalloc4);	
 
-// }
+ }
 
 // {
 // 	// 23557 blocks ~ 90+ MB
@@ -250,10 +250,62 @@ void TESTTERMINAL(){
 }
 
 
+void TESTWAIT()
+{
+	int x=5;
+	pid_t pid;
+	pid=fork();
+	if(pid > 0)
+	{
+		pid_t pid2=fork();
+		if(pid2==0)
+		{
+			printf("I am child 2.0\n");
+			yield();
+			printf("I am child 2.1\n");
+			yield();
+			printf("I am child 2.2\n");
+			yield();
+			printf("I am child 2.3\n");
+			yield();
+			printf("I am child 2.4\n");
+			printf("child 2 closing\n");
+			exit(0);
+		}
+		int status;
+		printf("I am parent..calling wait\n");
+		pid_t cpid=waitpid(-1,&status);
+		printf("Child %d completed execution:status=%d\n",cpid,status);
+		cpid=waitpid(-1,&status);
+		printf("Child %d completed execution:status=%d\n",cpid,status);
+		printf("I am parent %d\n",x);
+		yield();
+		printf("I am parent %d\n",x);
+		yield();
+		printf("I am parent 1.0\n");
+		//yield();
+		//while(1);
+	
+	}
+	if(pid==0)
+	{
+		printf("I am child 1 %d\n",x);
+		x=x+1;
+		yield();
+		printf("I am child 1.1 %d\n",x);
+		yield();
+		printf("I am child 1.2\n");
+		printf("child 1 closing\n");
+		exit(0);
+	}
+	printf("my child is dead \n");
+	yield();
+}
+
 
 int main(int argc, char *argv[], char *envp[]) {
 
-	puts("sbush> Hello World!!");
+	puts("sbush> Hello World!!\n");
 
 	 //TESTTERMINAL();
 
@@ -261,31 +313,11 @@ int main(int argc, char *argv[], char *envp[]) {
 	
 	 //TESTCONTEXTSWITCH();
 	 //TESTEXIT();
-	 int a=5;
-	pid_t pid;
-	pid=fork();
-	if(pid > 0)
-	{
-	 printf("I am parent %d\n",a);
-	 yield();
-	 printf("I am parent %d\n",a);
-	 yield();
-	 //printf("I am parent 1.0\n");
-	 //yield();
-	 //while(1);
+	 
+	 TESTWAIT();
+	 
+	 
 	
-	}
-	if(pid==0)
-	{
-	 printf("I am child %d\n",a);
-	 a=a+1;
-	 yield();
-	 printf("I am child %d\n",a);
-	 yield();
-	 printf("I am child 1.1\n");
-	 return 0;
-	}
-	printf("my child is dead %d\n",pid);
 	 
 	while(1);
 }

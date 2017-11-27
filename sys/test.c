@@ -11,7 +11,7 @@ void test()
 while(1);
 return;
 }
-
+/*
 
 void context1()
 {
@@ -41,4 +41,4 @@ void context2()
 	while(1);
 	//kernel_switch_to();
 	return;
-}
+}*/
