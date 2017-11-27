@@ -239,6 +239,8 @@ uint64_t printf(const char *pfmt, ...)
     }
     va_end(pap);
 	args[i]='\0';
+	//printf("here\n");
+	//while(1);
 	int ret=printfflush();
 	return ret;
 	

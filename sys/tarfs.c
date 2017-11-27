@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include<sys/kprintf.h>
+#include <sys/kprintf.h>
 #include <sys/tarfs.h>
-#include <string.h>
-#include<sys/virt_mem.h>
-#include<sys/task_manager.h>
+#include <sys/kstring.h>
+#include <sys/virt_mem.h>
+#include <sys/task_manager.h>
 
 int strcmp(const char *str1,const char *str2)
 {
@@ -184,6 +184,5 @@ void scan_tarfs(PCB *proc)
 	}
 
 }
-
 
 

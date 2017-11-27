@@ -13,6 +13,8 @@
 //#include <sys/scanPCI.h>
 #include <sys/paging.h>
 #include <sys/terminal.h>
+#include <sys/tarfs.h>
+#include <sys/vfs.h>
 
 
 #define INITIAL_STACK_SIZE 4096
@@ -27,6 +29,8 @@ extern uint64_t upml4;
 extern uint64_t ustacktop;
 extern uint64_t u_heapboundary;
 uint64_t RING_0_MODE=1;
+extern inode* root_inode;
+
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
@@ -53,6 +57,9 @@ uint64_t kernend=(uint64_t)physfree + 4096 * 280;
 map_kernpt((uint64_t)&kernmem,(uint64_t)physbase,(uint64_t)physfree,(uint64_t)kernend);
 
 syscall_init();
+
+
+init_tarfs();
 
 init_proc();
 

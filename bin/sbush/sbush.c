@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include<sys/defs.h>
+#include <sys/defs.h>
+#include <dirent.h>
 
 void foolcompiler(int* a){
 	return;
@@ -52,32 +53,33 @@ void testread(){
 
 void TESTMALLOC(){
 
-// {
-// 	int* trymalloc = (int*)malloc(2048*sizeof(int));
-// 	// printf("add malloc %p\n", trymalloc);	
-// 	trymalloc[0] = 1;
-// 	printf("malloc success %d\n", trymalloc[0]);
-// 	trymalloc[2047] = 2;
-// 	printf("malloc success %d\n", trymalloc[2047]);
+{
+	int* trymalloc = (int*)malloc(2048*sizeof(int));
+	// printf("add malloc %p\n", trymalloc);	
+	trymalloc[0] = 1;
+	puts("Working----------------------------------------");
+	printf("malloc success %d\n", trymalloc[0]);
+	trymalloc[2047] = 2;
+	printf("malloc success %d\n", trymalloc[2047]);
 
 
-// 	free(trymalloc);
+	free(trymalloc);
 
 
-// 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc2[0] = 1;
+	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+	trymalloc2[0] = 1;
 
-// 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc3[0] = 1;
+	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+	trymalloc3[0] = 1;
 
-// 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
-// 	trymalloc4[0] = 1;
+	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+	trymalloc4[0] = 1;
 
-// 	free(trymalloc2);
-// 	free(trymalloc3);
-// 	free(trymalloc4);	
+	free(trymalloc2);
+	free(trymalloc3);
+	free(trymalloc4);	
 
-// }
+}
 
 // {
 // 	// 23557 blocks ~ 90+ MB
@@ -212,6 +214,8 @@ void TESTTERMINAL(){
 
 
 	printf("Hi I am back to the good world\n");	
+	// int* try = (int*)malloc(10*sizeof(int));
+	// foolcompiler(try);	
 
 	char* num = (char*)malloc(1024*sizeof(char));
 	puts("Enter a number\n");
@@ -220,15 +224,44 @@ void TESTTERMINAL(){
 	
 }
 
+void TESTVFS(){
+
+
+	char* queryPath = "/";
+
+    struct dirent *pDirent;
+    DIR *pDir;
+
+
+    pDir = opendir (queryPath);
+    if (pDir == NULL) {
+        puts ("Cannot open directory \n");
+        return ;
+    }
+
+    while ((pDirent = readdir(pDir)) != NULL) {
+        puts (pDirent->d_name);
+        puts("\n");
+    }
+    // printf("readdir finished\n");
+    // closedir (pDir);
+}
 
 
 int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!");
 
-	// TESTTERMINAL();
+	//int *a=(int *)malloc(10*sizeof(int));
 
-	TESTMALLOC();
+	//a[0]=1;
+
+
+	TESTVFS();
+
+	//TESTTERMINAL();
+
+	// TESTMALLOC();
 	
 	// TESTCONTEXTSWITCH();
 	 

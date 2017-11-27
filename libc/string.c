@@ -16,6 +16,17 @@ int strncmp(const char *s1, const char *s2, size_t n){
 	}
 	return 0;
 }
+
+uint64_t strlen(const char* str){
+
+	uint64_t length = 0;
+	while(str[length] != '\0')
+	{
+		length++;
+	}
+
+	return length;
+}
 /*
 ssize_t getline(char **lineptr, size_t *n, FILE *stream){
 	return 0;
