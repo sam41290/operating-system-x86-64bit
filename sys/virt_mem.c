@@ -94,6 +94,10 @@ void *kmalloc(uint64_t byte_count)
 	return (void *)ret;
 }
 
+void kfree(uint64_t vaddr, uint64_t byte_count){
+	unmap_phyaddr_range(vaddr, vaddr+byte_count);
+}
+
 
 vma* alloc_vma(uint64_t startAdd, uint64_t endAddr){
 

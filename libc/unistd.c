@@ -167,7 +167,7 @@ pid_t wait(int *status){
 
 int waitpid(int pid, int *status){
 	
-	//printf("calling wait\n");
+	//printf("calling wait: %p\n",status);
 	
 	unsigned long syscallnumber = 61;
 	pid_t ret;

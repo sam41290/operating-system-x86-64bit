@@ -9,6 +9,8 @@
 #include<sys/gdt.h>
 #include <sys/terminal.h>
 #include <sys/kmalloc.h>
+#include <sys/vfs.h>
+#include <sys/kstring.h>
 
 uint64_t (*p[200])(gpr_t *reg);
 
@@ -101,7 +103,8 @@ uint64_t k_munmap(gpr_t *reg){
 
 uint64_t temporary_printf(gpr_t *reg)
 {
-	//kprintf("execute syscall %p\n",p[0]);
+	//kprintf("execute syscall printf %p\n",p[0]);
+	//while(1);
 	uint64_t printval = reg->rbx;
 	// __asm__(
 	// "movq %%rbx,%0;\n"
@@ -280,7 +283,10 @@ uint64_t syscall_wait(gpr_t *reg)
 	//while(1);
 	reg->rax=active->signalling_child;
 	//kprintf("rax value: %d\n",reg->rax);
-	*((uint64_t *)reg->rdi)=active->sigchild_state;
+	
+	*((uint64_t *)reg->rsi)=active->sigchild_state;
+	//kprintf("rsi: %p\n",reg->rsi);
+	//while(1);
 	return active->signalling_child;
 }
 
@@ -389,6 +395,34 @@ uint64_t k_write(gpr_t *reg){
 	return 0;
 }
 
+uint64_t k_opendir(gpr_t *reg){
+	char* path = (char*) reg->rdi;
+	// kprintf("Path recieved by opendir %s", path);
+	
+	dir* dirobj = (dir*)kmalloc(sizeof(dir));		//Figure out how to free it
+	inode* query = GetInode(path);
+	dirobj->query_inode = query;
+	dirobj->currInode = 1;
+	return (uint64_t)dirobj;
+}
+
+uint64_t k_readdir(gpr_t *reg){
+	// kprintf("Inside readdir\n");
+	dir* dirobj = (dir*)reg->rdi;
+
+	if (dirobj->currInode >= dirobj->query_inode->familyCount)
+	{
+		return (uint64_t)0;
+	}
+	for (int i = 0; i < strlen(dirobj->query_inode->family[dirobj->currInode]->inodeName); ++i)
+	{
+		dirobj->currDirent.d_name[i] = dirobj->query_inode->family[dirobj->currInode]->inodeName[i];
+	}
+	dirobj->currDirent.d_name[(strlen(dirobj->query_inode->family[dirobj->currInode]->inodeName))] = '\0';
+	dirobj->currInode++;
+	return (uint64_t)&dirobj->currDirent;
+}
+
 void syscall_init()
 {
 	//kprintf("iiiiiioooo\n");
@@ -400,6 +434,8 @@ void syscall_init()
 	p[58] = syscall_switch;
 	p[60] = syscall_exit;
 	p[61]=syscall_wait;
+	p[62] = k_opendir;
+	p[63] = k_readdir;
 	p[99] = temporary_printf;
 }
 

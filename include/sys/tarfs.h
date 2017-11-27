@@ -57,4 +57,7 @@ struct pheader
 };
 
 void scan_tarfs(PCB *proc);
+void walkthough_tarfs();
+int oct_to_dec(char *num);
+
 #endif

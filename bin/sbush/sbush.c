@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include<sys/defs.h>
+#include <sys/defs.h>
+#include <dirent.h>
 
 void foolcompiler(int* a){
 	return;
@@ -78,6 +79,33 @@ void TESTMALLOC(){
  	free(trymalloc4);	
 
  }
+//{
+//	int* trymalloc = (int*)malloc(2048*sizeof(int));
+//	// printf("add malloc %p\n", trymalloc);	
+//	trymalloc[0] = 1;
+//	puts("Working----------------------------------------");
+//	printf("malloc success %d\n", trymalloc[0]);
+//	trymalloc[2047] = 2;
+//	printf("malloc success %d\n", trymalloc[2047]);
+//
+//
+//	free(trymalloc);
+//
+//
+//	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+//	trymalloc2[0] = 1;
+//
+//	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+//	trymalloc3[0] = 1;
+//
+//	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+//	trymalloc4[0] = 1;
+//
+//	free(trymalloc2);
+//	free(trymalloc3);
+//	free(trymalloc4);	
+//
+//}
 
 // {
 // 	// 23557 blocks ~ 90+ MB
@@ -241,6 +269,8 @@ void TESTTERMINAL(){
 
 
 	printf("Hi I am back to the good world\n");	
+	// int* try = (int*)malloc(10*sizeof(int));
+	// foolcompiler(try);	
 
 	char* num = (char*)malloc(1024*sizeof(char));
 	puts("Enter a number\n");
@@ -249,6 +279,28 @@ void TESTTERMINAL(){
 	
 }
 
+void TESTVFS(){
+
+
+	char* queryPath = "/";
+
+    struct dirent *pDirent;
+    DIR *pDir;
+
+
+    pDir = opendir (queryPath);
+    if (pDir == NULL) {
+        puts ("Cannot open directory \n");
+        return ;
+    }
+
+    while ((pDirent = readdir(pDir)) != NULL) {
+        puts (pDirent->d_name);
+        puts("\n");
+    }
+    // printf("readdir finished\n");
+    // closedir (pDir);
+}
 
 void TESTWAIT()
 {
@@ -260,45 +312,45 @@ void TESTWAIT()
 		pid_t pid2=fork();
 		if(pid2==0)
 		{
-			printf("I am child 2.0\n");
+			puts("I am child 2.0\n");
 			yield();
-			printf("I am child 2.1\n");
+			puts("I am child 2.1\n");
 			yield();
-			printf("I am child 2.2\n");
+			puts("I am child 2.2\n");
 			yield();
-			printf("I am child 2.3\n");
+			puts("I am child 2.3\n");
 			yield();
-			printf("I am child 2.4\n");
-			printf("child 2 closing\n");
+			puts("I am child 2.4\n");
+			puts("child 2 closing\n");
 			exit(0);
 		}
 		int status;
-		printf("I am parent..calling wait\n");
-		pid_t cpid=waitpid(-1,&status);
-		printf("Child %d completed execution:status=%d\n",cpid,status);
-		cpid=waitpid(-1,&status);
-		printf("Child %d completed execution:status=%d\n",cpid,status);
-		printf("I am parent %d\n",x);
+		puts("I am parent..calling wait\n");
+		waitpid(-1,&status);
+		//puts("Child %d completed execution:status=%d\n",cpid,status);
+		waitpid(-1,&status);
+		//puts("Child %d completed execution:status=%d\n",cpid,status);
+		puts("I am parent 1\n");
 		yield();
-		printf("I am parent %d\n",x);
+		puts("I am parent 1.1\n");
 		yield();
-		printf("I am parent 1.0\n");
+		puts("I am parent 1.2\n");
 		//yield();
 		//while(1);
 	
 	}
 	if(pid==0)
 	{
-		printf("I am child 1 %d\n",x);
+		puts("I am child 1\n");
 		x=x+1;
 		yield();
-		printf("I am child 1.1 %d\n",x);
+		puts("I am child 1.1\n");
 		yield();
-		printf("I am child 1.2\n");
-		printf("child 1 closing\n");
+		puts("I am child 1.2\n");
+		puts("child 1 closing\n");
 		exit(0);
 	}
-	printf("my child is dead \n");
+	puts("my child is dead \n");
 	yield();
 }
 
@@ -307,7 +359,6 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
 
-	 //TESTTERMINAL();
 
 	//TESTMALLOC();
 	
@@ -316,8 +367,19 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 TESTWAIT();
 	 
+	 printf("soumyakant\n");
+	 printf("hihihihi %d\n",567);
 	 
 	
+	//TESTVFS();
+
+	//TESTTERMINAL();
+
+	// TESTMALLOC();
+	
+	// TESTCONTEXTSWITCH();
+
+	// TESTEXIT();
 	 
 	while(1);
 }

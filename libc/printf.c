@@ -1,10 +1,7 @@
 
-
-
-
 #include <stdarg.h>
 #include <sys/defs.h>
-#include<sys/kprintf.h>
+//#include<sys/kprintf.h>
 
 char args[1024];
 

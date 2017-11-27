@@ -13,14 +13,14 @@ extern uint64_t RING_0_MODE;
 
 struct terminal terminal_for_keyboard;
 
-uint64_t sys_call(gpr_t *reg)
+void sys_call(gpr_t *reg)
 {
 	RING_0_MODE=1;
 	uint64_t syscallnum=reg->rax;
 	if(syscallnum < 0 || syscallnum >= 200)
 	{
 		kprintf("Invalid syscall number or Not Mapped");
-		return 0;
+		return;
 	}
 	//kprintf("\nhere %d\n",syscallnum);
 	uint64_t syscall_ret = p[(int)reg->rax](reg);
@@ -28,7 +28,7 @@ uint64_t sys_call(gpr_t *reg)
 	RING_0_MODE=0;
 	//kprintf("\nhere %d\n",syscallnum);
 	//while(1);
-	return syscall_ret;
+	return;
 }
 
 
@@ -74,6 +74,8 @@ void pagemama(registers_t reg)
 	#ifdef DEBUG_MALLOC
 	kprintf("page fault %p\n", addr);
 	#endif
+	// kprintf("page fault %p\n", addr);
+
 
 	if (ctr > 0)
 	{
@@ -87,6 +89,7 @@ void pagemama(registers_t reg)
 		// kprintf("There is no process yet!! page fault for %p\n", addr);
 		// Thinking it is still in kernel mode
 		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
+		// kprintf("I am here\n");
 		if(map_phyaddr(addr) == -1)
 		{
 			kprintf("\nERROR: Can not allocate physical page for %p\n", addr);
@@ -103,6 +106,8 @@ void pagemama(registers_t reg)
 		int chk=0;
 		if(reg.err_code==7)
 		{
+			//kprintf("error code: %p\n",reg.err_code);
+			//kprintf("cow called %p\n",addr);
 			chk=check_cow(addr);
 			if(chk==1)
 				cow(addr);
