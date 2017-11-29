@@ -4,6 +4,9 @@
 #include <sys/defs.h>
 #include <dirent.h>
 
+
+char test[1024];
+
 void foolcompiler(int* a){
 	return;
 }
@@ -225,6 +228,8 @@ void TESTCONTEXTSWITCH(){
 }
 
 void TESTEXIT(){
+	
+	puts("testing exit\n");
 
 	int a=5;
 	pid_t pid;
@@ -312,42 +317,42 @@ void TESTWAIT()
 		pid_t pid2=fork();
 		if(pid2==0)
 		{
-			puts("I am child 2.0\n");
+			printf("I am child 2.0\n");
 			yield();
-			puts("I am child 2.1\n");
+			printf("I am child 2.1\n");
 			yield();
-			puts("I am child 2.2\n");
+			printf("I am child 2.2\n");
 			yield();
-			puts("I am child 2.3\n");
+			printf("I am child 2.3\n");
 			yield();
-			puts("I am child 2.4\n");
-			puts("child 2 closing\n");
+			printf("I am child 2.4\n");
+			printf("child 2 closing\n");
 			exit(0);
 		}
 		int status;
-		puts("I am parent..calling wait\n");
-		waitpid(-1,&status);
-		//puts("Child %d completed execution:status=%d\n",cpid,status);
-		waitpid(-1,&status);
-		//puts("Child %d completed execution:status=%d\n",cpid,status);
-		puts("I am parent 1\n");
+		printf("I am parent..calling wait\n");
+		pid_t cpid=waitpid(-1,&status);
+		printf("Child %d completed execution:status=%d\n",cpid,status);
+		cpid=waitpid(-1,&status);
+		printf("Child %d completed execution:status=%d\n",cpid,status);
+		printf("I am parent 1\n");
 		yield();
-		puts("I am parent 1.1\n");
+		printf("I am parent 1.1\n");
 		yield();
-		puts("I am parent 1.2\n");
+		printf("I am parent 1.2\n");
 		//yield();
 		//while(1);
 	
 	}
 	if(pid==0)
 	{
-		puts("I am child 1\n");
+		printf("I am child 1\n");
 		x=x+1;
 		yield();
-		puts("I am child 1.1\n");
+		printf("I am child 1.1\n");
 		yield();
-		puts("I am child 1.2\n");
-		puts("child 1 closing\n");
+		printf("I am child 1.2\n");
+		printf("child 1 closing\n");
 		exit(0);
 	}
 	puts("my child is dead \n");
@@ -365,11 +370,34 @@ int main(int argc, char *argv[], char *envp[]) {
 	 //TESTCONTEXTSWITCH();
 	 //TESTEXIT();
 	 
+	 //TESTWAIT();
+	 
+	 
+	 //TESTEXIT();
+	 
 	 TESTWAIT();
 	 
+	 char *a=(char *)malloc(sizeof(char) * 5);
+	 a[0]='a';
+	 puts(a); 
+	 char *b=(char *)malloc(sizeof(char) * 5);
+	 b[0]='a';
+	 puts(b); 
+	 char *c=(char *)malloc(sizeof(char) * 5);
+	 c[0]='a';
+	 puts(c); 
+	 char *d=(char *)malloc(sizeof(char) * 5);
+	 d[0]='a';
+	 puts(d); 
+	 char *e=(char *)malloc(sizeof(char) * 5);
+	 e[0]='a';
+	 puts(e); 
 	 printf("soumyakant\n");
 	 printf("hihihihi %d\n",567);
 	 
+	 test[0]='A';
+	 test[1]='\0';
+	 printf("%s",test);
 	
 	//TESTVFS();
 

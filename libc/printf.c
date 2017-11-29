@@ -1,83 +1,10 @@
 
 #include <stdarg.h>
 #include <sys/defs.h>
+#include<stdio.h>
 //#include<sys/kprintf.h>
 
-char args[1024];
-
-
-
-void printfflushchar(const char ch)
-{
-	
-	uint64_t arg=(uint64_t)ch;
-	
-	unsigned long syscallnumber=99;
-	
-	//kprintf("%d",syscallnumber);
-	
-	
-	__asm__(
-	"movq %0,%%rax;\n"
-	"movq %1,%%rbx;\n"
-	"int $0x80;\n"
-	:
-	:"g"(syscallnumber),"g"(arg)
-	);
-//	kprintf("2");
-	return;
-	
-
-}
-
-void printfflushNewLine(){
-	//checkForScroll();
-	
-	char ch='\n';
-	
-	unsigned long syscallnumber=99;
-	
-	unsigned long arg=(uint64_t)ch;
-	__asm__(
-	"movq %0,%%rax;\n"
-	"movq %1,%%rbx;\n"
-	"int $0x80;\n"
-	:
-	:"m"(syscallnumber),"m"(arg)
-	);
-	return;
-	
-}
-
-int printfflush()
-{
-	uint64_t arg=(uint64_t)(&args);
-	
-	unsigned long syscallnumber=99;
-	
-	//kprintf("%d",syscallnumber);
-	
-	
-	__asm__(
-	"movq %0,%%rax;\n"
-	"movq %1,%%rbx;\n"
-	"int $0x80;\n"
-	:
-	:"g"(syscallnumber),"g"(arg)
-	);
-	uint64_t ret=0;
-	
-	__asm__(
-	"movq %%rax,%0;\n"
-	:"=g"(ret)
-	);
-	
-	return ret;
-}
-
-
-
-int printfflushint(int text,int ctr)
+int printfflushint(int text,int ctr,char *args)
 {
 	char str[1024]; int i = 0;
 
@@ -117,9 +44,10 @@ int printfflushint(int text,int ctr)
 	
 }
 
-int printfflushhex(uint64_t num,int ctr)
+int printfflushhex(uint64_t num,int ctr,char *args)
 {
 	char ret[1024];
+	
 	int r = 0;
 
 	do
@@ -162,8 +90,11 @@ return ctr;
 
 
 
-uint64_t printf(const char *pfmt, ...)
+int printf(const char *pfmt, ...)
 {
+	
+	//puts("in printf\n");
+	char args[1024];
 	va_list pap;
     int d;
     char *s, c;
@@ -207,36 +138,40 @@ uint64_t printf(const char *pfmt, ...)
             d = va_arg(pap, int);
 			//kprintf("%d",d);
 			//kprintf("\n%d",123);
-            i=printfflushint(d,i);
+            i=printfflushint(d,i,args);
 			
             pfmt++;
     	}
     	else if (ch == '%' && nextch == 'x')
     	{
             d = va_arg(pap, int);
-            i=printfflushhex(d,i);
+            i=printfflushhex(d,i,args);
             pfmt++;
     	}
     	else if (ch == '%' && nextch == 'p')
     	{
             address = va_arg(pap, uint64_t);
-            i=printfflushhex(address,i);
+            i=printfflushhex(address,i,args);
             pfmt++;
     	}
     	else
     	{
+			//puts("printf got char\n");
 			args[i]=ch;
 			i++;
+			
+			//puts("3");
     		//printfflushchar(ch);
 			//kprintf("%s\n",pfmt);
 			//kprintf("3");
     	}
- 
+		//puts("here\n");
        	pfmt++;
     }
     va_end(pap);
 	args[i]='\0';
-	int ret=printfflush();
+	//puts("string parsing complete\n");
+	int ret=puts(args);
 	return ret;
 	
 	//kprintf("4");
