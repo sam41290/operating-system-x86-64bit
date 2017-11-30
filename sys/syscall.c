@@ -268,7 +268,7 @@ uint64_t syscall_wait(gpr_t *reg)
 		if(active->sigchild_state==0 && (active->waitingfor==-1 || active->waitingfor==active->signalling_child))
 		{
 			active->waitstate=0;
-			active->sigchild_state=5;
+			
 			break;
 		}
 		
@@ -285,21 +285,133 @@ uint64_t syscall_wait(gpr_t *reg)
 	//kprintf("rax value: %d\n",reg->rax);
 	
 	*((uint64_t *)reg->rsi)=active->sigchild_state;
+	active->sigchild_state=5;
 	//kprintf("rsi: %p\n",reg->rsi);
 	//while(1);
 	return active->signalling_child;
 }
 
+int check_abs_path(char *file)
+{
+	int ret=0;
+	for(int i=0;file[i]!='\0';i++)
+	{
+		if(file[i]=='/')
+		{
+			ret=1;
+			break;
+		}
+	}
+	return ret;
+}
 
+//----------------------------EXECVPE--------------------------------------//
+
+char *Paths[200];
+char abs_path[1024];
+void split_path(char *path)
+{
+	
+	int ctr=0;
+	Paths[ctr]=path;
+	for(int i=0;path[i]!='\0';i++)
+	{
+		if(path[i]==':')
+		{
+			ctr++;
+			Paths[ctr]=path + i;
+		}
+	}
+	Paths[ctr + 1]=NULL;
+	//return Paths;
+	
+}
+void concat_path(char *str1,char *str2)
+{
+	
+	int ctr=0;
+	for(int i=0;str1[i]!='\0';i++)
+	{
+		abs_path[ctr]=str1[i];
+		ctr++;
+	}
+	if(abs_path[ctr]!='/')
+	{
+		abs_path[ctr]='/';
+		ctr++;
+	}
+	for(int j=0;str2[j]!='\0';j++)
+	{
+		abs_path[ctr]=str2[j];
+		ctr++;
+	}
+	abs_path[ctr]='\0';
+	//return new;
+}
+
+uint64_t syscall_exec(gpr_t *reg)
+{
+	char *file_name=(char *)reg->rdi;
+	char **args=(char **)reg->rsi;
+	char **path=(char **)reg->rdx;
+	int file_found=0;
+	if(check_abs_path(file_name))
+	{
+		if(file_name[0]=='/')
+			file_name++;
+		file_found=scan_tarfs(active,file_name);
+		if(file_found==0)
+		{
+			kprintf("exec failed: file not found\n");
+			return 0;
+		}
+	}
+	else
+	{
+		int i=0;
+		while(path!=NULL && path[i]!=NULL)
+		{
+			char *p=path[i];
+			split_path(p);
+			for(int j=0;Paths[j]!=NULL;j++)
+			{
+				concat_path(Paths[j],file_name);
+				char *file_path=abs_path;
+				if(file_path[0]=='/')
+					file_path++;
+				file_found=scan_tarfs(active,file_path);
+				if(file_found)
+					break;
+			}
+			if(file_found)
+				break;
+			i++;
+		}
+	}
+	if(file_found==0)
+	{
+		kprintf("exec failed: file not found\n");
+		return 0;
+	}
+	
+	reg->rip=active->entry_point;
+	reg->rdi=(uint64_t)args;
+	
+	int i=0;
+	
+	for(i=0;args[i]!=NULL && args!=NULL;i++);
+	
+	reg->rsi=i;
+	
+	return 1;
+}
+
+//------------------------------------------------EXECVPE END--------------------------------------//
 
 uint64_t syscall_fork(gpr_t *reg)
 {
 	copy_parent_stack();
 		
-
-	
-	//kprintf("parent cr3:%p\n",parent_cr3);
-	
 	if((proc_end + 1) % 101==proc_start)
 	{
 		kprintf("child can not be queued\n");
@@ -432,6 +544,7 @@ void syscall_init()
 	p[11] = k_munmap;
 	p[57]= syscall_fork;
 	p[58] = syscall_switch;
+	p[59]=syscall_exec;
 	p[60] = syscall_exit;
 	p[61]=syscall_wait;
 	p[62] = k_opendir;

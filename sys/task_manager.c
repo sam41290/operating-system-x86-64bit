@@ -468,7 +468,10 @@ void init_proc()
 	init_stack(all_pro + proc_index);
 	create_kstack(all_pro + proc_index);
 	copy_kstack(all_pro + proc_index);
-	scan_tarfs(all_pro + proc_index);
+	
+	char shell[]="bin/sbush";
+	
+	scan_tarfs(all_pro + proc_index,shell);
 	//while(1);
 	
 	proc_Q[proc_end]=(uint64_t)proc_index;

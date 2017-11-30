@@ -360,6 +360,25 @@ void TESTWAIT()
 }
 
 
+void TESTEXECVPE()
+{
+	pid_t pid=fork();
+	 
+	 if(pid==0)
+	 {
+		 execvpe("bin/helloworld",NULL,NULL);
+		 //execvpe: variable passing and path passing test pending
+	 }
+	 if(pid > 0)
+	 {
+		 int status;
+		 wait(&status);
+	 }
+	 printf("child execution complete\n");
+	 
+	 printf("execvpe: variable passing and path passing test pending\n");
+}
+
 int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
@@ -377,27 +396,23 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 TESTWAIT();
 	 
-	 char *a=(char *)malloc(sizeof(char) * 5);
-	 a[0]='a';
-	 puts(a); 
-	 char *b=(char *)malloc(sizeof(char) * 5);
-	 b[0]='a';
-	 puts(b); 
-	 char *c=(char *)malloc(sizeof(char) * 5);
-	 c[0]='a';
-	 puts(c); 
-	 char *d=(char *)malloc(sizeof(char) * 5);
-	 d[0]='a';
-	 puts(d); 
-	 char *e=(char *)malloc(sizeof(char) * 5);
-	 e[0]='a';
-	 puts(e); 
-	 printf("soumyakant\n");
-	 printf("hihihihi %d\n",567);
+	 pid_t pid=fork();
 	 
-	 test[0]='A';
-	 test[1]='\0';
-	 printf("%s",test);
+	 if(pid==0)
+	 {
+		 execvpe("bin/helloworld",NULL,NULL);
+		 //execvpe: variable passing and path passing test pending
+	 }
+	 if(pid > 0)
+	 {
+		 int status;
+		 wait(&status);
+	 }
+	 printf("child execution complete\n");
+	 
+	 printf("execvpe: variable passing and path passing test pending\n");
+	
+	//execvpe: variable passing and path passing test pending
 	
 	//TESTVFS();
 

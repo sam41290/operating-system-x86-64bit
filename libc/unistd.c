@@ -70,7 +70,7 @@ char* getcwd(char *buf, unsigned long size){		//TODO change int size to size_t
 }
 
 
-int execve(const char *filename, char *const argv[], char *const envp[]){
+int execvpe(const char *filename, char *const argv[], char *const envp[]){
 
 	// shputs("execve:");shputs(filename);shputs(argv[0]);
 
@@ -82,7 +82,7 @@ int execve(const char *filename, char *const argv[], char *const envp[]){
 		"movq %2, %%rdi;\n"
 		"movq %3, %%rsi;\n"
 		"movq %4, %%rdx;\n"
-		"syscall;\n"
+		"int $0x80;\n"
 		"movq %%rax, %0;\n"
 		: "=m" (ret)
 		: "m" (syscallnumber), "m" (filename), "m" (argv), "m" (envp)

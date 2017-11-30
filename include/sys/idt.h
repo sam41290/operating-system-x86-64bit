@@ -39,14 +39,11 @@ typedef struct registers
 {
      uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rbp, rdi, rsi, rdx, rcx, rbx, rax; // Pushed by pushq i.e. all general purpose registers
      uint64_t err_code;    // Interrupt number and error code (if applicable)
-     //uint64_t ds;                  // Data segment selector
-     //uint64_t rip, cs, eflags, usersp,ss; // Pushed by the processor automatically.
 } registers_t;
 
 typedef struct gpr
 {
      uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rbp, rdi, rsi, rdx, rcx, rbx, rax; // Pushed by pushq i.e. all general purpose registers
-	 //uint64_t ds;                  // Data segment selector
      uint64_t rip, cs, eflags, usersp,ss; // Pushed by the processor automatically.
 } gpr_t;
 
