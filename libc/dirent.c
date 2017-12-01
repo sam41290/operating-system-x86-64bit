@@ -4,7 +4,7 @@
 
 DIR *opendir(const char *name){
 
-	unsigned long syscallnumber = 61;
+	unsigned long syscallnumber = 62;
 	unsigned long dir;
 
 	__asm__(
@@ -26,7 +26,7 @@ DIR *opendir(const char *name){
 }
 struct dirent *readdir(DIR *dirp){
 
-	unsigned long syscallnumber = 62;
+	unsigned long syscallnumber = 63;
 	unsigned long dentry;
 
 	__asm__(

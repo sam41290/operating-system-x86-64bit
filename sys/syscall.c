@@ -15,13 +15,14 @@
 uint64_t (*p[200])(gpr_t *reg);
 
 extern PCB *active;
-extern PCB proc_Q[101];
+extern uint64_t proc_Q[101];
 extern PCB all_pro[100];
 extern uint64_t proc_descriptor[100];
 extern int proc_start;
 extern int proc_end;
 extern uint64_t global_pid;
 extern struct terminal terminal_for_keyboard;
+
 
 
 uint64_t dead(gpr_t *reg){
@@ -102,7 +103,7 @@ uint64_t k_munmap(gpr_t *reg){
 
 uint64_t temporary_printf(gpr_t *reg)
 {
-	kprintf("execute syscall printf %p\n",p[0]);
+	//kprintf("execute syscall printf %p\n",p[0]);
 	//while(1);
 	uint64_t printval = reg->rbx;
 	// __asm__(
@@ -122,42 +123,32 @@ uint64_t syscall_switch(gpr_t *reg)
 {
 	//kprintf("\nhere\n");
 
-	if(active!=NULL)
+	if(active!=NULL && active->waitstate!=1)
 	{
-		(proc_Q + proc_end)->sno         =active->sno;        
-		(proc_Q + proc_end)->pid         =active->pid;        
-		(proc_Q + proc_end)->ppid        =active->ppid ;      
-		(proc_Q + proc_end)->entry_point =active->entry_point;
-		(proc_Q + proc_end)->u_stackbase =active->u_stackbase;
-		(proc_Q + proc_end)->k_stackbase =active->k_stackbase;
-		(proc_Q + proc_end)->cr3         =active->cr3 ;       
-		(proc_Q + proc_end)->mmstruct    =active->mmstruct;   
-		(proc_Q + proc_end)->heap_top    =active->heap_top;   
-		(proc_Q + proc_end)->next        = proc_Q + proc_end + 1;     
+		proc_Q[proc_end]=(uint64_t)active->sno;    
+		active->k_stack=(uint64_t)reg;
+		active->u_stack=reg->usersp;
+		active->state=1;
 		
-		(proc_Q + proc_end)->k_stack=(uint64_t)reg;
-		(proc_Q + proc_end)->u_stack=reg->usersp;
-		(proc_Q + proc_end)->state=1;
+		proc_end=(proc_end + 1)%101;
+	}
+	if(active->waitstate==1)
+	{
+		uint64_t kstack;
 		
-		proc_end=proc_end + 1;
+		__asm__(
+		"movq %%rsp,%0;\n"
+		:"=g"(kstack)
+		:
+		);
+		active->k_stack=(uint64_t)kstack;
 	}
 	PCB *p_to=get_nextproc();
 	active=p_to;
-	//kprintf("old process user stack: %p\n",reg);
-	//gpr_t *new_rg=(gpr_t *)active->k_stack;
-	//kprintf("new process user stack: %p k_stack%p\n",new_rg->usersp,active->k_stack);
-	
-	//kprintf("new process cr3: %p\n",active->cr3);
-	
-	//kprintf("switching pid: %d\n",active->pid);
-	//while(1);
 	set_tss_rsp((void *)active->k_stack);
 	
 	change_ptable(active->cr3);
-	
-	
-	//kprintf("new process user stack content %p",
-	
+		
 	if(active->state==0)
 	{
 		
@@ -175,6 +166,17 @@ uint64_t syscall_switch(gpr_t *reg)
 	}
 	else
 	{
+		if(active->waitstate==1)
+		{
+			//kprintf("I am waiting on!!!!!\n");
+			__asm__(
+			"movq %0,%%rsp;\n"
+			:
+			:"g"(active->k_stack)
+			);
+			//while(1);
+			return 0;
+		}
 	
 		__asm__(
 		"movq %0,%%rsp;\n"
@@ -214,21 +216,202 @@ uint64_t syscall_exit(gpr_t *reg)
 	{
 		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
 		last_vma = last_vma->nextvma;
+	
 	}
+	//kprintf("exit status: %d\n",reg->rdi);
+	uint64_t ppid=active->ppid;
+	for(int i=0;i<100;i++)
+	{
+		if(all_pro[i].pid==ppid)
+		{
+			
+			all_pro[i].sigchild_state=reg->rdi;
+			all_pro[i].signalling_child=active->pid;
+			break;
+		}
+	}
+	
 	active=NULL;
+	
 	//kprintf("calling switch\n");
 	syscall_switch(reg);
 	return 0;
 }
 
+
+void do_wait(gpr_t *reg)
+{
+	
+	
+	//kprintf("parent waiting:\n");
+	proc_Q[proc_end]=(uint64_t)active->sno;
+	
+	active->u_stack=reg->usersp;
+	active->state=1;
+		
+	proc_end=(proc_end + 1)%101;
+	
+	syscall_switch(reg);
+	//kprintf("aahhaa\n");
+	
+}
+
+uint64_t syscall_wait(gpr_t *reg)
+{
+	//kprintf("wait called\n");
+	active->waitstate=1;
+	active->waitingfor=reg->rdi;
+	//int ctr=0;
+	while(1)
+	{
+		do_wait(reg);
+		if(active->sigchild_state==0 && (active->waitingfor==-1 || active->waitingfor==active->signalling_child))
+		{
+			active->waitstate=0;
+			
+			break;
+		}
+		
+		//ctr++;
+		//if(ctr >= 4)
+		//while(1);
+	}
+	//kprintf("wait complete\n");
+	active->k_stack=(uint64_t)reg;
+	active->u_stack=reg->usersp;
+	set_tss_rsp((void *)active->k_stack);
+	//while(1);
+	reg->rax=active->signalling_child;
+	//kprintf("rax value: %d\n",reg->rax);
+	
+	*((uint64_t *)reg->rsi)=active->sigchild_state;
+	active->sigchild_state=5;
+	//kprintf("rsi: %p\n",reg->rsi);
+	//while(1);
+	return active->signalling_child;
+}
+
+int check_abs_path(char *file)
+{
+	int ret=0;
+	for(int i=0;file[i]!='\0';i++)
+	{
+		if(file[i]=='/')
+		{
+			ret=1;
+			break;
+		}
+	}
+	return ret;
+}
+
+//----------------------------EXECVPE--------------------------------------//
+
+char *Paths[200];
+char abs_path[1024];
+void split_path(char *path)
+{
+	
+	int ctr=0;
+	Paths[ctr]=path;
+	for(int i=0;path[i]!='\0';i++)
+	{
+		if(path[i]==':')
+		{
+			ctr++;
+			Paths[ctr]=path + i;
+		}
+	}
+	Paths[ctr + 1]=NULL;
+	//return Paths;
+	
+}
+void concat_path(char *str1,char *str2)
+{
+	
+	int ctr=0;
+	for(int i=0;str1[i]!='\0';i++)
+	{
+		abs_path[ctr]=str1[i];
+		ctr++;
+	}
+	if(abs_path[ctr]!='/')
+	{
+		abs_path[ctr]='/';
+		ctr++;
+	}
+	for(int j=0;str2[j]!='\0';j++)
+	{
+		abs_path[ctr]=str2[j];
+		ctr++;
+	}
+	abs_path[ctr]='\0';
+	//return new;
+}
+
+uint64_t syscall_exec(gpr_t *reg)
+{
+	char *file_name=(char *)reg->rdi;
+	char **args=(char **)reg->rsi;
+	char **path=(char **)reg->rdx;
+	int file_found=0;
+	if(check_abs_path(file_name))
+	{
+		if(file_name[0]=='/')
+			file_name++;
+		file_found=scan_tarfs(active,file_name);
+		if(file_found==0)
+		{
+			kprintf("exec failed: file not found\n");
+			return 0;
+		}
+	}
+	else
+	{
+		int i=0;
+		while(path!=NULL && path[i]!=NULL)
+		{
+			char *p=path[i];
+			split_path(p);
+			for(int j=0;Paths[j]!=NULL;j++)
+			{
+				concat_path(Paths[j],file_name);
+				char *file_path=abs_path;
+				if(file_path[0]=='/')
+					file_path++;
+				file_found=scan_tarfs(active,file_path);
+				if(file_found)
+					break;
+			}
+			if(file_found)
+				break;
+			i++;
+		}
+	}
+	if(file_found==0)
+	{
+		kprintf("exec failed: file not found\n");
+		return 0;
+	}
+	
+	reg->rip=active->entry_point;
+	reg->rdi=(uint64_t)args;
+	
+	int i=0;
+	
+	for(i=0;args[i]!=NULL && args!=NULL;i++);
+	
+	reg->rsi=i;
+	
+	return 1;
+}
+
+//------------------------------------------------EXECVPE END--------------------------------------//
+
 uint64_t syscall_fork(gpr_t *reg)
 {
 	copy_parent_stack();
 		
-
-	
-	//kprintf("parent cr3:%p\n",parent_cr3);
-	
 	if((proc_end + 1) % 101==proc_start)
 	{
 		kprintf("child can not be queued\n");
@@ -241,21 +424,15 @@ uint64_t syscall_fork(gpr_t *reg)
 		if(proc_descriptor[i]==0)
 			break;
 	}
+	create_new_process(i);
 	child=&all_pro[i];
-	proc_descriptor[i]=1;
-	child->cr3=mappageTable();  //active->cr3;//to be changed later
-	child->pid=global_pid;
-	global_pid++;
-	child->next=(PCB *)(child + 1);
 	child->state=1;
-	child->sno=i;
 	child->ppid=active->pid;
 	child->entry_point=active->entry_point;
 	child->heap_top =active->heap_top;
+	
 	(child->mmstruct).vma_list=NULL;
 	copy_vma(child);
-	
-	
 	
 	//while(1);
 	change_ptable(child->cr3);
@@ -273,22 +450,9 @@ uint64_t syscall_fork(gpr_t *reg)
 	
 	init_stack(child);
 	reg->rax=child->pid;
-	
-	//proc_Q[proc_end]=active[0];
-	(proc_Q + proc_end)->sno         =active->sno;        
-	(proc_Q + proc_end)->pid         =active->pid;        
-	(proc_Q + proc_end)->ppid        =active->ppid;       
-	(proc_Q + proc_end)->entry_point =active->entry_point;
-	(proc_Q + proc_end)->u_stackbase =active->u_stackbase;
-	(proc_Q + proc_end)->k_stackbase =active->k_stackbase;
-	(proc_Q + proc_end)->cr3         =active->cr3 ;       
-	(proc_Q + proc_end)->mmstruct    =active->mmstruct;   
-	(proc_Q + proc_end)->heap_top    =active->heap_top; 
-	(proc_Q + proc_end)->next        = proc_Q + proc_end + 1; 
-	(proc_Q + proc_end)->k_stack	 =active->k_stack;
-	(proc_Q + proc_end)->u_stack	 =active->u_stack;
-	(proc_Q + proc_end)->state	 =1;
-	proc_end=proc_end + 1;
+	active->sigchild_state=child->state;
+	proc_Q[proc_end]=(uint64_t)active->sno;
+	proc_end=(proc_end + 1)%101;
 	//kprintf("parent kstack:%p ustack:%p\n",(proc_Q + proc_start)->k_stack,(proc_Q + proc_start)->u_stack);
 	//kprintf("parent sp val:%p sp:%p\n",*(uint64_t *)parent_rg->usersp,parent_rg->usersp);
 	
@@ -381,9 +545,11 @@ void syscall_init()
 	p[11] = k_munmap;
 	p[57]= syscall_fork;
 	p[58] = syscall_switch;
+	p[59]=syscall_exec;
 	p[60] = syscall_exit;
-	p[61] = k_opendir;
-	p[62] = k_readdir;
+	p[61]=syscall_wait;
+	p[62] = k_opendir;
+	p[63] = k_readdir;
 	p[99] = temporary_printf;
 }
 

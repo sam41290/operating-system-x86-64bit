@@ -70,7 +70,7 @@ char* getcwd(char *buf, unsigned long size){		//TODO change int size to size_t
 }
 
 
-int execve(const char *filename, char *const argv[], char *const envp[]){
+int execvpe(const char *filename, char *const argv[], char *const envp[]){
 
 	// shputs("execve:");shputs(filename);shputs(argv[0]);
 
@@ -82,7 +82,7 @@ int execve(const char *filename, char *const argv[], char *const envp[]){
 		"movq %2, %%rdi;\n"
 		"movq %3, %%rsi;\n"
 		"movq %4, %%rdx;\n"
-		"syscall;\n"
+		"int $0x80;\n"
 		"movq %%rax, %0;\n"
 		: "=m" (ret)
 		: "m" (syscallnumber), "m" (filename), "m" (argv), "m" (envp)
@@ -104,7 +104,7 @@ pid_t fork(void)
 		: "=m" (ret)
 		: "m" (syscallnumber)
 	);
-	printf("fork syscall complete %d\n",ret);
+	//printf("fork syscall complete %d\n",ret);
 	return ret;
 }
 
@@ -144,45 +144,43 @@ pid_t getpid(void){
 pid_t wait(int *status){
 
 	unsigned long syscallnumber = 61;
-	pid_t upid = -1;
-	int options = 0;
-	struct rusage* ru = NULL;
-
+	
+	int pid=-1;
+	
 	pid_t ret;
 
 	__asm__(
 		"movq %1, %%rax;\n"
 		"movq %2, %%rdi;\n"
 		"movq %3, %%rsi;\n"
-		"movq %4, %%rdx;\n"
-		"movq %5, %%r10;\n"
-		"syscall;\n"
+		"int $0x80;\n"
 		"movq %%rax, %0;\n"
 		: "=m" (ret)
-		: "m" (syscallnumber), "m" (upid), "m" (status), "m" (options), "m" (ru)
-		: "rax", "rdi", "rsi", "rdx", "r10"
+		: "m" (syscallnumber),"m"(pid),"m"(status)
+		: "rax","rdi","rsi"
 	);
+	
+	//printf("waited on %d\n",ret);
 
 	return ret;	
 }
 
-int waitpid(int pid, int *status, int options){
+int waitpid(int pid, int *status){
+	
+	//printf("calling wait: %p\n",status);
+	
 	unsigned long syscallnumber = 61;
-	struct rusage* ru = NULL;
-
 	pid_t ret;
 
 	__asm__(
 		"movq %1, %%rax;\n"
 		"movq %2, %%rdi;\n"
 		"movq %3, %%rsi;\n"
-		"movq %4, %%rdx;\n"
-		"movq %5, %%r10;\n"
-		"syscall;\n"
+		"int $0x80;\n"
 		"movq %%rax, %0;\n"
 		: "=m" (ret)
-		: "m" (syscallnumber), "m" (pid), "m" (status), "m" (options), "m" (ru)
-		: "rax", "rdi", "rsi", "rdx", "r10"
+		: "m" (syscallnumber), "m" (pid), "m" (status)
+		: "rax", "rdi", "rsi"
 	);
 
 	return ret;	

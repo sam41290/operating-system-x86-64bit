@@ -5,7 +5,7 @@
 #include <sys/virt_mem.h>
 #include <sys/task_manager.h>
 
-int strcmp(const char *str1,const char *str2)
+int strcmp2(const char *str1,const char *str2)
 {
 
 	int i=0;
@@ -132,12 +132,8 @@ void read_elf(char *elfaddr,PCB *proc)
     	//It will alsways write the last segment(data segment)
     	proc->heap_top = (uint64_t)((((seg_vma->vend) >> 12) + 1) << 12);
 
-		// kprintf("start add:%p\n",vaddr);
-		//kprintf("start location:%p\n",location);
-		//kprintf("filesz:%d\n",filesz);
-		// kprintf("memsz:%d\n",memsz);
+	
 		file_map(vaddr,location,filesz,memsz);
-		//kprintf("here:%d\n",i);
 		phead = phead + head_size;
 	}
 	kprintf("Heap top %p\n", proc->heap_top);
@@ -158,19 +154,19 @@ void read_elf(char *elfaddr,PCB *proc)
 }
 
 
-void scan_tarfs(PCB *proc)
+int scan_tarfs(PCB *proc,char *fname)
 {
 	struct posix_header_ustar *header =  (struct posix_header_ustar*)(&_binary_tarfs_start);
     struct posix_header_ustar *end =  (struct posix_header_ustar*)(&_binary_tarfs_end);
 	int size=0;
     while(header < end)
     {
-		if(strcmp(header->name,"bin/sbush")==0 && header->size[0]!='\0')
+		if(strcmp2(header->name,fname)==0 && header->size[0]!='\0')
 		{
 			size=oct_to_dec(header->size);
 			kprintf("file found :%s size: %d||%s\n",header->name,size,header->size);
 			read_elf((char *)(header + 1),proc);
-			return;
+			return 1;
 		}
 		size=oct_to_dec(header->size);
 		if((size % sizeof(struct posix_header_ustar))==0)
@@ -182,6 +178,7 @@ void scan_tarfs(PCB *proc)
 			header= header + 2 + (int)(size/sizeof(struct posix_header_ustar));
 		}
 	}
+	return 0;
 
 }
 

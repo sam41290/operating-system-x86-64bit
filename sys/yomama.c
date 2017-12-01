@@ -107,7 +107,7 @@ void pagemama(registers_t reg)
 		if(reg.err_code==7)
 		{
 			//kprintf("error code: %p\n",reg.err_code);
-			//kprintf("cow called\n");
+			//kprintf("cow called %p\n",addr);
 			chk=check_cow(addr);
 			if(chk==1)
 				cow(addr);

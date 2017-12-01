@@ -56,7 +56,7 @@ struct pheader
   char p_align[8]; /* Alignment of segment */
 };
 
-void scan_tarfs(PCB *proc);
+int scan_tarfs(PCB *proc,char *fname);
 void walkthough_tarfs();
 int oct_to_dec(char *num);
 

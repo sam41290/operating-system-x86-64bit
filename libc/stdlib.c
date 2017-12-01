@@ -35,10 +35,14 @@ void *malloc(size_t size){
 
 void exit(int status){
 	//printf("calling exit\n");
-
+	unsigned long syscallnumber = 60;
+	uint64_t exit_status=status;
+	
 	__asm__(
-		"movq $60, %rax;\n"
-		"movq $1, %rdi;\n"
+		"movq %0, %%rax;\n"
+		"movq %1, %%rdi;\n"
 		"int $0x80;\n"
+		:
+		:"g"(syscallnumber),"g"(exit_status)
 	);
 }

@@ -16,7 +16,7 @@ int proc_end=0;
 
 PCB *active = NULL;
 
-PCB proc_Q[101];
+uint64_t proc_Q[101];
 
 PCB all_pro[100];
 
@@ -60,9 +60,9 @@ PCB *get_nextproc()
 		kprintf("0 process in the queue\n");
 		return NULL;
 	}
-	PCB *temp=proc_Q + proc_start;
+	PCB *temp=all_pro + proc_Q[proc_start];
 	//kprintf("from get next new kstack:%p new:%p\n",(temp)->k_stack,(temp)->u_stack);
-	proc_start=proc_start + 1;
+	proc_start=(proc_start + 1)%101;
 	return temp;
 }
 
@@ -283,7 +283,7 @@ void cow(uint64_t addr)
 	return;
 	
 }
-
+/*
 void kernel_switch_to()
 {
 	__asm__(
@@ -364,7 +364,7 @@ void kernel_switch_to()
 }
 
 
-
+*/
 
 void init_kstack()
 {
@@ -425,13 +425,28 @@ void copy_kstack(PCB *proc)
 	 );
 	//while(1);
 }
-/*
-PCB* create_new_process(){
-	PCB* new_task = (PCB *)kmalloc(sizeof(PCB));
-	new_task->mmstruct.vma_list = NULL;
-	//initialize other PCB members if needed
-	return new_task;
-}*/
+
+void create_new_process(int proc_index){
+	(all_pro + proc_index)->sno=proc_index;
+	((all_pro + proc_index)->mmstruct).vma_list = NULL;
+	(all_pro + proc_index)->cr3=mappageTable();
+	if((all_pro + proc_index)->cr3==0)
+	{
+		kprintf("\npage table creation failed\n");
+		return;
+	}
+	
+	(all_pro + proc_index)->pid=global_pid;
+	global_pid++;
+	(all_pro + proc_index)->next = (all_pro + proc_index + 1);
+	(all_pro + proc_index)->state=0;	
+	all_pro[proc_index].waitstate=0;
+	all_pro[proc_index].waitingfor=0;
+	all_pro[proc_index].signalling_child=0;
+	all_pro[proc_index].sigchild_state=5;
+	
+	proc_descriptor[proc_index]=1;
+}
 
 
 
@@ -441,42 +456,30 @@ void init_proc()
 	{
 		proc_descriptor[i]=0;
 	}
+	for(int i=0;i<101;i++)
+	{
+		proc_Q[i]=-1;
+	}
 	init_kstack();
 	int proc_index=0;
-	(all_pro + proc_index)->sno=proc_index;
-	((all_pro + proc_index)->mmstruct).vma_list = NULL;
-	(all_pro + proc_index)->cr3=mappageTable();
-	if((all_pro + proc_index)->cr3==0)
-	{
-		kprintf("\npage table creation failed\n");
-		return;
-	}
-	//kprintf("test: %p\n",proc_end->cr3);
-	//while(1);
+	create_new_process(proc_index);
+	
 	change_ptable((all_pro + proc_index)->cr3);
-	
-	
-	(all_pro + proc_index)->pid=global_pid;
-	global_pid++;
-	(all_pro + proc_index)->next = (all_pro + proc_index + 1);
-	(all_pro + proc_index)->state=0;
-	scan_tarfs(all_pro + proc_index);
-	//proc_end->entry_point=(uint64_t)test;
-	
-	
 	init_stack(all_pro + proc_index);
 	create_kstack(all_pro + proc_index);
 	copy_kstack(all_pro + proc_index);
 	
+	char shell[]="bin/sbush";
 	
+	scan_tarfs(all_pro + proc_index,shell);
 	//while(1);
-	proc_descriptor[proc_index]=1;
-	proc_Q[proc_end]=all_pro[proc_index];
+	
+	proc_Q[proc_end]=(uint64_t)proc_index;
 	proc_end=proc_end + 1;
 	active=(all_pro + proc_index);
 	proc_start=proc_start + 1;
 	active->state=1;
-
+	kprintf("initial child state %d\n",active->sigchild_state);
 	//kprintf("user stack: %p\n",active->u_stack);
 	
 	set_tss_rsp((void *)active->k_stack);

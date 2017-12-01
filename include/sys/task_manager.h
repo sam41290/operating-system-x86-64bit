@@ -29,6 +29,10 @@ struct pcb_t
 	uint64_t k_stack;
 	uint64_t state;
 	uint64_t cr3;
+	__volatile__ int waitstate;
+	__volatile__ int waitingfor;
+	__volatile__ uint64_t signalling_child;
+	__volatile__ int sigchild_state;
 	mm_struct mmstruct;
 	uint64_t heap_top;
 	struct pcb_t *next;
@@ -52,6 +56,7 @@ void cow(uint64_t addr);
 void copy_parent_stack();
 uint64_t mappageTable();
 void copy_vma(PCB *proc);
+void create_new_process(int proc_index);
 void context1();
 
 void context2();
