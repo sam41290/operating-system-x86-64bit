@@ -669,10 +669,11 @@ uint64_t k_open(gpr_t *reg){
 		if (active->fd[i] == NULL)
 		{
 			//Allocate this fd 
-			active->fd[i] = (file_object*)kmalloc(sizeof(file_object));
-			active->fd[i]->currentoffset = 0;
-			active->fd[i]->node = query;
-			kprintf("Returning to good world!\n");
+			active->fd[i] = (uint64_t*)kmalloc(sizeof(file_object));
+			((file_object*)active->fd[i])->currentoffset = query->start;
+			((file_object*)active->fd[i])->node = query;
+			// active->fd[i] = (uint64_t*)fObj;
+			// kprintf("Returning to good world %p!\n", active->fd[i]);
 			return i;
 		}
 	}
@@ -683,14 +684,41 @@ uint64_t k_open(gpr_t *reg){
 uint64_t k_read(gpr_t *reg){
 	// kprintf("Read request arrives\n");
 
-	uint64_t fd = reg->rdi;
-	if (fd == 0)
+	uint64_t fd_index = reg->rdi;
+	char* buf = (char*)reg->rsi;
+	uint64_t count = reg->rdx;
+	uint64_t read_count = 0;
+	if (fd_index == 0)
 	{
 		uint64_t buff = reg->rsi;
 		return terminal_for_keyboard.read(&terminal_for_keyboard, (uint64_t)buff);
 	}
+	else if (fd_index > 1)
+	{
+		// kprintf("Going to fetch file object, fd_index %d\n", fd_index);
+		file_object* file = (file_object*)active->fd[(int)fd_index];
 
-	kprintf("We dont support file pointers other than stdin stdout!!\n");
+		// kprintf("Going to read %d\n", file->node->end-file->node->start);
+		char* ch = (char*)file->currentoffset;
+		uint64_t start = file->currentoffset; uint64_t end = file->currentoffset + count;
+		for (uint64_t i = start; i < end; ++i)
+		{
+			if (i >= file->node->end)
+			{
+				break;
+			}
+			// kprintf("%c", *ch);
+			*buf++ = *ch++;
+			read_count++;
+			file->currentoffset++;
+		}
+		*buf = '\0';
+		return read_count;
+	}
+	else
+	{
+		kprintf("We dont support file pointers other than stdin stdout!!\n");
+	}
 	return 0;	
 }
 

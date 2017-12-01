@@ -398,7 +398,12 @@ void TESTFILE(){
 		return;
 	}
 
-	// printf("fd - %s\n", file->fd);
+	char* buff = (char*) malloc(4096*sizeof(char));
+	int read_count = read(file->fd, buff, 9);
+	for (int i = 0; i < read_count; ++i)
+	{
+		printf("%c", buff[i]);
+	}
 }
 
 struct try
@@ -424,19 +429,6 @@ int main(int argc, char *argv[], char *envp[]) {
 
 	// TESTFILE();
 
-	// struct try* m = malloc(sizeof(struct try));
-	// // *(m+sizeof(int)) = 1;
-	// // m->a = 1;
-	// m->b = 1;
-	// printf("%d\n", m->b);
-
-
- 	int* trymalloc = (int*)malloc(2048*sizeof(int));
- 	// printf("add malloc %p\n", trymalloc);	
- 	// trymalloc[0] = 1;
- 	// printf("malloc success %d\n", trymalloc[0]);
- 	trymalloc[2047] = 2;
- 	printf("malloc success %d\n", trymalloc[1]);
 
 
 	while(1);

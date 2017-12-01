@@ -37,7 +37,7 @@ struct pcb_t
 	__volatile__ uint64_t signalling_child;
 	__volatile__ int sigchild_state;
 	mm_struct mmstruct;
-	file_object* fd[MAX_FD]; 
+	uint64_t* fd[MAX_FD]; 
 	uint64_t heap_top;
 	struct pcb_t *next;
 };

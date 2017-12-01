@@ -41,6 +41,26 @@ int open(const char *pathname, int flags){
 	return f;
 }
 
+ssize_t read(int fd, void *buf, size_t count){
+
+	unsigned long syscallnumber = 0;
+	int read_count;
+
+	__asm__(
+		"movq %1, %%rax;\n"
+		"movq %2, %%rdi;\n"
+		"movq %3, %%rsi;\n"
+		"movq %4, %%rdx;\n"
+		"int $0x80;\n"
+		"movq %%rax, %0;\n"
+		: "=m" (read_count)
+		: "m" (syscallnumber), "m" (fd), "m" ((unsigned long)buf), "m" (count)
+		: "rax","rdi", "rsi", "rdx"
+	);
+
+	//Return value doesnt work maybe need to deep copy use the parameter buff in app
+	return read_count;
+}
 File *fopen(const char *path,const char *mode)
 {
 
@@ -71,19 +91,11 @@ File *fopen(const char *path,const char *mode)
 
 
 	int f = open(filepath, flag);
-
-
-	printf("f %d\n", f);
 	// putchar(f+48);
 
 	//fp.fd=f;
 
 	file->fd=f;
-	printf("file->fd %d\n", file->fd);
-
-
-
-
 
 	if(f<0)
 	return NULL;
