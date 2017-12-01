@@ -22,6 +22,7 @@ extern int proc_start;
 extern int proc_end;
 extern uint64_t global_pid;
 extern struct terminal terminal_for_keyboard;
+extern uint64_t RING_0_MODE;
 
 
 
@@ -121,7 +122,7 @@ uint64_t temporary_printf(gpr_t *reg)
 
 uint64_t syscall_switch(gpr_t *reg)
 {
-	//kprintf("\nhere\n");
+	//kprintf("\nswitch called\n");
 
 	if(active!=NULL && active->waitstate!=1)
 	{
@@ -148,10 +149,10 @@ uint64_t syscall_switch(gpr_t *reg)
 	set_tss_rsp((void *)active->k_stack);
 	
 	change_ptable(active->cr3);
-		
+	
 	if(active->state==0)
 	{
-		
+		RING_0_MODE=0;	
 		
 		__asm__(
 		"pushq $0x23;\n"
@@ -177,7 +178,13 @@ uint64_t syscall_switch(gpr_t *reg)
 			//while(1);
 			return 0;
 		}
-	
+		RING_0_MODE=0;	
+		
+		//kprintf("switching\n");
+		
+		//gpr_t *chk_reg=(gpr_t *)active->k_stack;
+		//kprintf("new process entry point: %p\n",chk_reg->rip);
+		
 		__asm__(
 		"movq %0,%%rsp;\n"
 		"popq %%r15;\n"
@@ -411,7 +418,9 @@ uint64_t syscall_exec(gpr_t *reg)
 uint64_t syscall_fork(gpr_t *reg)
 {
 	copy_parent_stack();
-		
+	
+	//kprintf("parent entry point:%p\n",reg->rip);
+	
 	if((proc_end + 1) % 101==proc_start)
 	{
 		kprintf("child can not be queued\n");

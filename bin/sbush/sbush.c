@@ -5,7 +5,7 @@
 #include <dirent.h>
 
 
-char test[1024];
+
 
 void foolcompiler(int* a){
 	return;
@@ -394,23 +394,14 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 //TESTEXIT();
 	 
-	 TESTWAIT();
+	 //TESTWAIT();
 	 
-	 pid_t pid=fork();
 	 
-	 if(pid==0)
-	 {
-		 execvpe("bin/helloworld",NULL,NULL);
-		 //execvpe: variable passing and path passing test pending
-	 }
-	 if(pid > 0)
-	 {
-		 int status;
-		 wait(&status);
-	 }
-	 printf("child execution complete\n");
+	 TESTEXECVPE();
 	 
-	 printf("execvpe: variable passing and path passing test pending\n");
+	 puts("child execution complete\n");
+	 
+	 puts("execvpe: variable passing and path passing test pending\n");
 	
 	//execvpe: variable passing and path passing test pending
 	

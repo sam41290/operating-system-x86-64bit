@@ -104,7 +104,7 @@ pid_t fork(void)
 		: "=m" (ret)
 		: "m" (syscallnumber)
 	);
-	//printf("fork syscall complete %d\n",ret);
+	printf("fork syscall complete %d\n",ret);
 	return ret;
 }
 
