@@ -21,6 +21,79 @@ int chdir(char* in_path){
 }
 
 
+int open(const char *pathname, int flags){
+
+	unsigned long syscallnumber = 2;
+	int f;
+
+
+	__asm__(
+	"movq %1, %%rax;\n"
+	"movq %2, %%rdi;\n"
+	"movq %3, %%rsi;\n"
+	"int $0x80;\n"
+	"movq %%rax, %0;\n"
+	: "=m" (f)
+	: "m" (syscallnumber), "m" (pathname), "m" (flags)
+	: "rax","rdi", "rsi"
+	);
+
+	return f;
+}
+
+File *fopen(const char *path,const char *mode)
+{
+
+	//FILE fp;
+
+	File *file=(File*)malloc(sizeof(File));
+
+	int flag;
+
+	const char *filepath=path;
+
+	const char *filemode=mode;
+
+	if(strcmp(filemode,"r")==0)
+	flag=O_RDONLY;
+	else if(strcmp(filemode,"w")==0)
+	flag=O_WRONLY | O_TRUNC;
+	else if(strcmp(filemode,"r+")==0)
+	flag=O_RDWR;
+	else if(strcmp(filemode,"w+")==0)
+	flag=O_RDWR | O_TRUNC;
+	else if(strcmp(filemode,"a+")==0)
+	flag=O_APPEND;
+	else
+	flag=O_RDONLY;
+
+	//putchar(flag + 48);
+
+
+	int f = open(filepath, flag);
+
+
+	printf("f %d\n", f);
+	// putchar(f+48);
+
+	//fp.fd=f;
+
+	file->fd=f;
+	printf("file->fd %d\n", file->fd);
+
+
+
+
+
+	if(f<0)
+	return NULL;
+	else
+	return file;
+
+
+}
+
+
 
 // int chdir(char *path)
 // {

@@ -479,6 +479,34 @@ uint64_t syscall_fork(gpr_t *reg)
 }
 
 
+uint64_t k_open(gpr_t *reg){
+	char* filePath = (char*)reg->rdi;
+	// uint64_t flags = reg->rsi;   	//TODO use this
+
+	inode* query = GetInode(filePath);
+
+	if (query == NULL || (query != NULL && query->type == DIR))
+	{
+		kprintf("Returning to good world error!\n");
+		return -1;
+	}
+
+	for (int i = 2; i < MAX_FD; ++i)
+	{
+		if (active->fd[i] == NULL)
+		{
+			//Allocate this fd 
+			active->fd[i] = (file_object*)kmalloc(sizeof(file_object));
+			active->fd[i]->currentoffset = 0;
+			active->fd[i]->node = query;
+			kprintf("Returning to good world!\n");
+			return i;
+		}
+	}
+	kprintf("Returning to good world error!\n");
+	return -1;
+}
+
 uint64_t k_read(gpr_t *reg){
 	// kprintf("Read request arrives\n");
 
@@ -541,13 +569,14 @@ void syscall_init()
 	//kprintf("iiiiiioooo\n");
 	p[0] = k_read;
 	p[1] = k_write;
+	p[2] = k_open;
 	p[9] = k_mmap;
 	p[11] = k_munmap;
-	p[57]= syscall_fork;
+	p[57] = syscall_fork;
 	p[58] = syscall_switch;
-	p[59]=syscall_exec;
+	p[59] = syscall_exec;
 	p[60] = syscall_exit;
-	p[61]=syscall_wait;
+	p[61] = syscall_wait;
 	p[62] = k_opendir;
 	p[63] = k_readdir;
 	p[99] = temporary_printf;

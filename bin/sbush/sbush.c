@@ -379,12 +379,29 @@ void TESTEXECVPE()
 	 printf("execvpe: variable passing and path passing test pending\n");
 }
 
+void TESTFILE(){
+	File* file = fopen("/Tryme/Piku.txt", "r");
+	if (file == NULL)
+	{
+		printf("Fopen failed\n");
+		return;
+	}
+
+	// printf("fd - %s\n", file->fd);
+}
+
+struct try
+{
+	int a;
+	int b;
+}__attribute__((packed));
+
 int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
 
 
-	//TESTMALLOC();
+	// TESTMALLOC();
 	
 	 //TESTCONTEXTSWITCH();
 	 //TESTEXIT();
@@ -393,36 +410,23 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 
 	 //TESTEXIT();
-	 
-	 TESTWAIT();
-	 
-	 pid_t pid=fork();
-	 
-	 if(pid==0)
-	 {
-		 execvpe("bin/helloworld",NULL,NULL);
-		 //execvpe: variable passing and path passing test pending
-	 }
-	 if(pid > 0)
-	 {
-		 int status;
-		 wait(&status);
-	 }
-	 printf("child execution complete\n");
-	 
-	 printf("execvpe: variable passing and path passing test pending\n");
-	
-	//execvpe: variable passing and path passing test pending
-	
-	//TESTVFS();
 
-	//TESTTERMINAL();
+	// TESTFILE();
 
-	// TESTMALLOC();
-	
-	// TESTCONTEXTSWITCH();
+	// struct try* m = malloc(sizeof(struct try));
+	// // *(m+sizeof(int)) = 1;
+	// // m->a = 1;
+	// m->b = 1;
+	// printf("%d\n", m->b);
 
-	// TESTEXIT();
-	 
+
+ 	int* trymalloc = (int*)malloc(2048*sizeof(int));
+ 	// printf("add malloc %p\n", trymalloc);	
+ 	// trymalloc[0] = 1;
+ 	// printf("malloc success %d\n", trymalloc[0]);
+ 	trymalloc[2047] = 2;
+ 	printf("malloc success %d\n", trymalloc[1]);
+
+
 	while(1);
 }

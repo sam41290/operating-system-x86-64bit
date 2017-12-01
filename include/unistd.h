@@ -30,5 +30,6 @@ int pipe(int pipefd[2]);
 pid_t getpid(void);
 pid_t getppid(void);
 void yield(void);
-
+#include <stdio.h>
+File *fopen(const char *path,const char *mode);
 #endif
