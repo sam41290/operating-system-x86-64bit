@@ -4,7 +4,7 @@
 #include <sys/defs.h>
 #include <dirent.h>
 
-
+char test[100];
 
 
 void foolcompiler(int* a){
@@ -356,7 +356,7 @@ void TESTWAIT()
 		exit(0);
 	}
 	puts("my child is dead \n");
-	yield();
+	//yield();
 }
 
 
@@ -364,19 +364,30 @@ void TESTEXECVPE()
 {
 	pid_t pid=fork();
 	 
-	 if(pid==0)
-	 {
-		 execvpe("bin/helloworld",NULL,NULL);
-		 //execvpe: variable passing and path passing test pending
-	 }
-	 if(pid > 0)
-	 {
-		 int status;
-		 wait(&status);
-	 }
-	 printf("child execution complete\n");
+	if(pid==0)
+	{
+		//yield();
+		execvpe("bin/helloworld",NULL,NULL);
+	 //execvpe: variable passing and path passing test pending
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+	}
+	printf("child execution complete\n");
+	
+	printf("execvpe: variable passing and path passing test pending\n");
+}
+
+void emti_test()
+{
+	int *str=malloc(sizeof(int)*2048);
 	 
-	 printf("execvpe: variable passing and path passing test pending\n");
+	 str[2047]=10;
+	 
+	 printf("%d",str[2047]);
+	
 }
 
 int main(int argc, char *argv[], char *envp[]) {
@@ -394,14 +405,27 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 //TESTEXIT();
 	 
+	 int *str=malloc(sizeof(int)*2048);
+	 
+	 str[2047]=10;
+	 
+	 printf("%d",str[2047]);
+	 
+	 emti_test();
+	 
 	 //TESTWAIT();
 	 
 	 
-	 TESTEXECVPE();
 	 
-	 puts("child execution complete\n");
+	 //TESTEXECVPE();
 	 
-	 puts("execvpe: variable passing and path passing test pending\n");
+	 //test[0]='A';
+	 
+	 //printf("%s",test);
+	 
+	 //puts("child execution complete\n");
+	 
+	 //puts("execvpe: variable passing and path passing test pending\n");
 	
 	//execvpe: variable passing and path passing test pending
 	

@@ -106,7 +106,7 @@ void read_elf(char *elfaddr,PCB *proc)
     // kprintf("num header %d", elfhead->e_phnum[0]);
 	char *phead=(char *)(elfaddr + off);
 	uint64_t head_count= (uint64_t)(*(elfhead->e_phnum)) + 10 * (uint64_t)(*((elfhead->e_phnum) + 1));
-	kprintf("head count: %d\n",head_count);
+	//kprintf("head count: %d\n",head_count);
 	
 	uint64_t head_size=((uint64_t)(*(elfhead->e_phentsize)))+
 						256*((uint64_t)(*((elfhead->e_phentsize)+1)));
@@ -125,6 +125,7 @@ void read_elf(char *elfaddr,PCB *proc)
 
 		// kprintf("ptype : %d %d %d %d \n", (uint64_t)p->p_type[0],(uint64_t)p->p_type[1],(uint64_t)p->p_type[2],(uint64_t)p->p_type[3]);
 		//Create vma for the segments
+		
 		vma* seg_vma = alloc_vma(vaddr, vaddr+memsz);
 		// kprintf("seg_vma [%d - %d]\n", seg_vma->vstart, seg_vma->vend);
 		append_to_vma_list(proc, seg_vma);
@@ -136,7 +137,7 @@ void read_elf(char *elfaddr,PCB *proc)
 		file_map(vaddr,location,filesz,memsz);
 		phead = phead + head_size;
 	}
-	kprintf("Heap top %p\n", proc->heap_top);
+	//kprintf("Heap top %p\n", proc->heap_top);
 	//kprintf("here out:%d\n",123);
 	//struct pheader *phead=()()
 
@@ -164,7 +165,7 @@ int scan_tarfs(PCB *proc,char *fname)
 		if(strcmp2(header->name,fname)==0 && header->size[0]!='\0')
 		{
 			size=oct_to_dec(header->size);
-			kprintf("file found :%s size: %d||%s\n",header->name,size,header->size);
+			//kprintf("file found :%s size: %d||%s\n",header->name,size,header->size);
 			read_elf((char *)(header + 1),proc);
 			return 1;
 		}

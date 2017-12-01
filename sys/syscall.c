@@ -11,6 +11,12 @@
 #include <sys/kmalloc.h>
 #include <sys/vfs.h>
 #include <sys/kstring.h>
+#define PROC_SIZE 100
+#define CHILD 0
+#define NEW 1
+
+#define WAITING_TO_LIVE 1
+#define WAITING_TO_DIE 2
 
 uint64_t (*p[200])(gpr_t *reg);
 
@@ -120,6 +126,34 @@ uint64_t temporary_printf(gpr_t *reg)
 	return 0;
 }
 
+void kill_proc()
+{
+	//kprintf("in exit\n");
+	all_pro[active->sno].state=0;
+	proc_descriptor[active->sno]=0;
+	all_pro[active->sno].cr3=0;
+	vma *last_vma=(active->mmstruct).vma_list;
+	while(last_vma != NULL)
+	{
+		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
+		last_vma = last_vma->nextvma;
+	
+	}
+	//kprintf("exit status: %d\n",reg->rdi);
+	uint64_t ppid=active->ppid;
+	for(int i=0;i<100;i++)
+	{
+		if(all_pro[i].pid==ppid)
+		{
+			
+			all_pro[i].sigchild_state=0;
+			all_pro[i].signalling_child=active->pid;
+			break;
+		}
+	}
+	return;
+}
+
 uint64_t syscall_switch(gpr_t *reg)
 {
 	//kprintf("\nswitch called\n");
@@ -147,7 +181,7 @@ uint64_t syscall_switch(gpr_t *reg)
 	PCB *p_to=get_nextproc();
 	active=p_to;
 	set_tss_rsp((void *)active->k_stack);
-	
+	//kprintf("switching to %d %d\n",active->pid,active->waitstate);
 	change_ptable(active->cr3);
 	
 	if(active->state==0)
@@ -167,7 +201,7 @@ uint64_t syscall_switch(gpr_t *reg)
 	}
 	else
 	{
-		if(active->waitstate==1)
+		if(active->waitstate==WAITING_TO_LIVE)
 		{
 			//kprintf("I am waiting on!!!!!\n");
 			__asm__(
@@ -175,7 +209,23 @@ uint64_t syscall_switch(gpr_t *reg)
 			:
 			:"g"(active->k_stack)
 			);
+
 			//while(1);
+			return 0;
+		}
+		if(active->waitstate==WAITING_TO_DIE)
+		{
+			//kprintf("\n waiting to die called\n");
+			//while(1);
+			if(active->signalling_child==active->waitingfor && active->sigchild_state==0)
+				kill_proc();
+			else
+			{
+				proc_Q[proc_end]=(uint64_t)active->sno;
+				proc_end=(proc_end + 1)%101;
+				active=NULL;
+			}
+			syscall_switch(reg);
 			return 0;
 		}
 		RING_0_MODE=0;	
@@ -263,19 +313,35 @@ void do_wait(gpr_t *reg)
 	
 }
 
+int check_live_child(int child_id)
+{
+	for(int i=0;i<PROC_SIZE;i++)
+	{
+		if(proc_descriptor[i]==1)
+		{
+			if(all_pro[i].ppid==active->pid &&(child_id==-1 || child_id==all_pro[i].pid))
+				return 1;
+		}
+	}
+	//kprintf("no child present\n");
+	return 0;
+}
+
 uint64_t syscall_wait(gpr_t *reg)
 {
-	//kprintf("wait called\n");
-	active->waitstate=1;
+	//kprintf("wait called %d\n",reg->rdi);
+	if(check_live_child(reg->rdi)==0)
+		return 0;
+	active->waitstate=WAITING_TO_LIVE;
 	active->waitingfor=reg->rdi;
+	//kprintf("wait called\n");
 	//int ctr=0;
 	while(1)
 	{
 		do_wait(reg);
 		if(active->sigchild_state==0 && (active->waitingfor==-1 || active->waitingfor==active->signalling_child))
 		{
-			active->waitstate=0;
-			
+			active->waitstate=0;		
 			break;
 		}
 		
@@ -287,9 +353,7 @@ uint64_t syscall_wait(gpr_t *reg)
 	active->k_stack=(uint64_t)reg;
 	active->u_stack=reg->usersp;
 	set_tss_rsp((void *)active->k_stack);
-	//while(1);
 	reg->rax=active->signalling_child;
-	//kprintf("rax value: %d\n",reg->rax);
 	
 	*((uint64_t *)reg->rsi)=active->sigchild_state;
 	active->sigchild_state=5;
@@ -297,6 +361,13 @@ uint64_t syscall_wait(gpr_t *reg)
 	//while(1);
 	return active->signalling_child;
 }
+
+
+
+//----------------------------EXECVPE--------------------------------------//
+
+char *Paths[200];
+char abs_path[1024];
 
 int check_abs_path(char *file)
 {
@@ -312,10 +383,6 @@ int check_abs_path(char *file)
 	return ret;
 }
 
-//----------------------------EXECVPE--------------------------------------//
-
-char *Paths[200];
-char abs_path[1024];
 void split_path(char *path)
 {
 	
@@ -356,37 +423,109 @@ void concat_path(char *str1,char *str2)
 	//return new;
 }
 
+uint64_t count_args(char **args)
+{
+	int ctr;
+	for (ctr=0;args[ctr]!=NULL;ctr++);
+	
+	return ctr;
+}
+
+void copy_args(char **src,char **tgt,int ctr)
+{
+	for(int i=0;i<ctr;i++)
+	{
+		tgt[i]=src[i];
+	}
+}
+
+void strcpy(char *src,char *tgt,int len)
+{
+	int i;
+	for(i=0;i<len;i++)
+		tgt[i]=src[i];
+	tgt[i]='\0';
+}
+
 uint64_t syscall_exec(gpr_t *reg)
 {
+	
 	char *file_name=(char *)reg->rdi;
 	char **args=(char **)reg->rsi;
 	char **path=(char **)reg->rdx;
+	
+	uint64_t namelen=strlen(file_name);
+	
+	uint64_t args_ctr=count_args(args);
+	
+	uint64_t path_ctr=count_args(path);
+	
+	char file[strlen(file_name)];
+	strcpy(file_name,file,namelen);
+	
+	char *cpy_args[args_ctr];
+	copy_args(args,cpy_args,args_ctr);
+	
+	char *cpy_path[path_ctr];
+	copy_args(path,cpy_path,path_ctr);
+	
 	int file_found=0;
-	if(check_abs_path(file_name))
+	
+	int i;
+	for(i=0;i<100;i++)
 	{
-		if(file_name[0]=='/')
-			file_name++;
-		file_found=scan_tarfs(active,file_name);
-		if(file_found==0)
-		{
-			kprintf("exec failed: file not found\n");
-			return 0;
-		}
+		if(proc_descriptor[i]==0)
+			break;
+	}
+	copy_parent_stack();
+	
+	PCB *child;
+	
+	create_new_process(i,NEW);
+	
+	child=&all_pro[i];
+	child->state=1;
+	child->ppid=active->pid;
+	change_ptable(child->cr3);
+	init_stack(child);
+	
+	
+	create_kstack(child);
+	
+	uint64_t parent_stack;
+	
+	__asm__(
+	"movq %%rsp,%0;\n"
+	:"=g"(parent_stack)
+	:
+	);
+	
+	
+	copy_kstack(child);
+		
+	//kprintf("file name:%s",file);
+	
+	if(check_abs_path(file))
+	{
+		char *file_path=file;
+		if(file[0]=='/')
+			file_path++;
+		file_found=scan_tarfs(child,file);
 	}
 	else
 	{
-		int i=0;
-		while(path!=NULL && path[i]!=NULL)
+		i=0;
+		while(cpy_path!=NULL && cpy_path[i]!=NULL)
 		{
-			char *p=path[i];
+			char *p=cpy_path[i];
 			split_path(p);
 			for(int j=0;Paths[j]!=NULL;j++)
 			{
-				concat_path(Paths[j],file_name);
+				concat_path(Paths[j],file);
 				char *file_path=abs_path;
 				if(file_path[0]=='/')
 					file_path++;
-				file_found=scan_tarfs(active,file_path);
+				file_found=scan_tarfs(child,file_path);
 				if(file_found)
 					break;
 			}
@@ -397,18 +536,44 @@ uint64_t syscall_exec(gpr_t *reg)
 	}
 	if(file_found==0)
 	{
+		
+		change_ptable(active->cr3);
+		__asm__(
+		"movq %0,%%rsp;\n"
+		:
+		:"g"(parent_stack)
+		);
 		kprintf("exec failed: file not found\n");
 		return 0;
 	}
 	
-	reg->rip=active->entry_point;
-	reg->rdi=(uint64_t)args;
+	copy_args(cpy_args,args,args_ctr);
+	copy_args(cpy_path,path,path_ctr);
 	
-	int i=0;
+	//kprintf("old kstack: %p new kstack: %p\n",active->k_stack
+	
+	uint64_t stackdiff=active->k_stackbase-(uint64_t)reg;
+	gpr_t *new_rg=(gpr_t *)(active->k_stackbase - stackdiff);
+	
+	active->waitstate=WAITING_TO_DIE;
+	active->waitingfor=child->pid;
+	proc_Q[proc_end]=(uint64_t)active->sno;
+	proc_end=(proc_end + 1)%101;
+	active=child;
+	new_rg->rip=active->entry_point;
+	new_rg->rdi=(uint64_t)args;
+	new_rg->usersp=active->u_stack;
+	
+	i=0;
 	
 	for(i=0;args[i]!=NULL && args!=NULL;i++);
 	
-	reg->rsi=i;
+	new_rg->rsi=i;
+	
+	set_tss_rsp((void *)active->k_stack);
+	
+	
+	//kprintf("file found entry point %p\n",new_rg->rip);
 	
 	return 1;
 }
@@ -433,7 +598,7 @@ uint64_t syscall_fork(gpr_t *reg)
 		if(proc_descriptor[i]==0)
 			break;
 	}
-	create_new_process(i);
+	create_new_process(i,CHILD);
 	child=&all_pro[i];
 	child->state=1;
 	child->ppid=active->pid;
@@ -475,14 +640,13 @@ uint64_t syscall_fork(gpr_t *reg)
 	child_rg->usersp=child->u_stack;
 
 	//kprintf("child kstack:%p ustack:%p\n",child->k_stack,child->u_stack);
+	//kprintf("parent kstack:%p ustack:%p\n",active->k_stack,active->u_stack);
+
 	
 	child_rg->rax=0;
 	//kprintf("child cr3: %p parent cr3: %p\n",child->cr3,active->cr3);
 	active=child;
-	//kprintf("parent kstack:%p ustack:%p\n",(proc_Q + proc_start)->k_stack,(proc_Q + proc_start)->u_stack);
-	set_tss_rsp((void *)active->k_stack);
-	//kprintf("Inside forks 1234\n");
-	
+	set_tss_rsp((void *)active->k_stack);	
 	
 	return child->pid;
 }
