@@ -371,6 +371,7 @@ uint64_t k_readdir(gpr_t *reg){
 	return (uint64_t)&dirobj->currDirent;
 }
 
+
 void syscall_init()
 {
 	//kprintf("iiiiiioooo\n");
