@@ -9,6 +9,9 @@
 #include<sys/defs.h>
 #define PROC_SIZE 100
 
+#define CHILD 0
+#define NEW 1
+
 
 extern uint64_t RING_0_MODE;
 int proc_start=0;
@@ -55,6 +58,7 @@ void copy_parent_stack()
 
 PCB *get_nextproc()
 {
+	//kprintf("proc start:%d\n",proc_start);
 	if(proc_start==proc_end)
 	{
 		kprintf("0 process in the queue\n");
@@ -107,10 +111,10 @@ void init_stack(PCB *proc)
 }
 
 
-uint64_t mappageTable()
+uint64_t mappageTable(uint64_t proc_index, int new)
 {
 	
-	uint64_t *v_pml4=(uint64_t *)(upml4-(4096 * global_pid));
+	uint64_t *v_pml4=(uint64_t *)(upml4-(4096 * proc_index));
 	//kprintf("\nv_pml4:%p\n",v_pml4);
 	
 	
@@ -131,7 +135,7 @@ uint64_t mappageTable()
 	for(int i=0;i<510;i++)
 	{
 		v_pml4[i]=0x0;
-		if(p1[i]!=0x0)
+		if(p1[i]!=0x0 && new==0)
 			v_pml4[i]=(p1[i] & 0xFFFFFFFFFFFFF000) | 5;
 	}
 	v_pml4[511]=p1[511];
@@ -426,10 +430,10 @@ void copy_kstack(PCB *proc)
 	//while(1);
 }
 
-void create_new_process(int proc_index){
+void create_new_process(int proc_index,int new){
 	(all_pro + proc_index)->sno=proc_index;
 	((all_pro + proc_index)->mmstruct).vma_list = NULL;
-	(all_pro + proc_index)->cr3=mappageTable();
+	(all_pro + proc_index)->cr3=mappageTable(proc_index,new);
 	if((all_pro + proc_index)->cr3==0)
 	{
 		kprintf("\npage table creation failed\n");
@@ -462,7 +466,7 @@ void init_proc()
 	}
 	init_kstack();
 	int proc_index=0;
-	create_new_process(proc_index);
+	create_new_process(proc_index,NEW);
 	
 	change_ptable((all_pro + proc_index)->cr3);
 	init_stack(all_pro + proc_index);

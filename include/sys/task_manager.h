@@ -23,8 +23,8 @@ typedef struct mm mm_struct;
 struct pcb_t
 {
 	uint64_t sno;
-	uint64_t pid;
-	uint64_t ppid;
+	__volatile__ uint64_t pid;
+	__volatile__ uint64_t ppid;
 	uint64_t entry_point;
 	uint64_t u_stack;
 	uint64_t u_stackbase;
@@ -58,9 +58,9 @@ PCB *get_nextproc();
 int check_cow(uint64_t addr);
 void cow(uint64_t addr);
 void copy_parent_stack();
-uint64_t mappageTable();
+uint64_t mappageTable(uint64_t proc_index, int new);
 void copy_vma(PCB *proc);
-void create_new_process(int proc_index);
+void create_new_process(int proc_index,int new);
 void context1();
 
 void context2();

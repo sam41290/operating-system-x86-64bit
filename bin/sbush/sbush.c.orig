@@ -421,6 +421,35 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 
 	 //TESTEXIT();
+<<<<<<< HEAD
+=======
+	 
+	 int *str=malloc(sizeof(int)*2048);
+	 
+	 str[2047]=10;
+	 
+	 printf("%d",str[2047]);
+	 
+	 emti_test();
+	 
+	 //TESTWAIT();
+	 
+	 
+	 
+	 //TESTEXECVPE();
+	 
+	 //test[0]='A';
+	 
+	 //printf("%s",test);
+	 
+	 //puts("child execution complete\n");
+	 
+	 //puts("execvpe: variable passing and path passing test pending\n");
+	
+	//execvpe: variable passing and path passing test pending
+	
+	//TESTVFS();
+>>>>>>> 954146437e2d64819a0da3468bedb3dd7f22c0c9
 
 	// TESTFILE();
 
