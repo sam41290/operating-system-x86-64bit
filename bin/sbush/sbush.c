@@ -366,7 +366,7 @@ void TESTEXECVPE()
 	 
 	if(pid==0)
 	{
-		//yield();
+		yield();
 		execvpe("bin/helloworld",NULL,NULL);
 	 //execvpe: variable passing and path passing test pending
 	}
@@ -382,7 +382,7 @@ void TESTEXECVPE()
 
 void emti_test()
 {
-	int *str=malloc(sizeof(int)*2048);
+	int *str=(int *)malloc(sizeof(int)*2048);
 	 
 	 str[2047]=10;
 	 
@@ -405,7 +405,9 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 //TESTEXIT();
 	 
-	 int *str=malloc(sizeof(int)*2048);
+	 TESTEXECVPE();
+	 
+	 int *str=(int *)malloc(sizeof(int)*2048);
 	 
 	 str[2047]=10;
 	 
