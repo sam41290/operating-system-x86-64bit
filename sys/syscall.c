@@ -652,17 +652,87 @@ uint64_t syscall_fork(gpr_t *reg)
 }
 
 
+uint64_t k_open(gpr_t *reg){
+	char* filePath = (char*)reg->rdi;
+	// uint64_t flags = reg->rsi;   	//TODO use this
+
+	inode* query = GetInode(filePath);
+
+	if (query == NULL || (query != NULL && query->type == DIR))
+	{
+		kprintf("Returning to good world error!\n");
+		return -1;
+	}
+
+	for (int i = 2; i < MAX_FD; ++i)
+	{
+		if (active->fd[i] == NULL)
+		{
+			//Allocate this fd 
+			active->fd[i] = (uint64_t*)kmalloc(sizeof(file_object));
+			((file_object*)active->fd[i])->currentoffset = query->start;
+			((file_object*)active->fd[i])->node = query;
+			// active->fd[i] = (uint64_t*)fObj;
+			// kprintf("Returning to good world %p!\n", active->fd[i]);
+			return i;
+		}
+	}
+	kprintf("Returning to good world error!\n");
+	return -1;
+}
+
+uint64_t k_close(gpr_t *reg){
+
+	uint64_t fd_index = reg->rdi;
+	// kprintf("Request to Free %d\n", fd_index);
+
+	if (fd_index > 1)
+	{
+		// I know its memory leak but can help
+		// kprintf("Freeed %d\n", fd_index);
+		active->fd[(int)fd_index] = NULL;
+	}	
+	return 1;
+}
+
 uint64_t k_read(gpr_t *reg){
 	// kprintf("Read request arrives\n");
 
-	uint64_t fd = reg->rdi;
-	if (fd == 0)
+	uint64_t fd_index = reg->rdi;
+	char* buf = (char*)reg->rsi;
+	uint64_t count = reg->rdx;
+	uint64_t read_count = 0;
+	if (fd_index == 0)
 	{
 		uint64_t buff = reg->rsi;
 		return terminal_for_keyboard.read(&terminal_for_keyboard, (uint64_t)buff);
 	}
+	else if (fd_index > 1)
+	{
+		// kprintf("Going to fetch file object, fd_index %d\n", fd_index);
+		file_object* file = (file_object*)active->fd[(int)fd_index];
 
-	kprintf("We dont support file pointers other than stdin stdout!!\n");
+		// kprintf("Going to read %d\n", file->node->end-file->node->start);
+		char* ch = (char*)file->currentoffset;
+		uint64_t start = file->currentoffset; uint64_t end = file->currentoffset + count;
+		for (uint64_t i = start; i < end; ++i)
+		{
+			if (i >= file->node->end)
+			{
+				break;
+			}
+			// kprintf("%c", *ch);
+			*buf++ = *ch++;
+			read_count++;
+			file->currentoffset++;
+		}
+		*buf = '\0';
+		return read_count;
+	}
+	else
+	{
+		kprintf("We dont support file pointers other than stdin stdout!!\n");
+	}
 	return 0;	
 }
 
@@ -691,11 +761,19 @@ uint64_t k_opendir(gpr_t *reg){
 	return (uint64_t)dirobj;
 }
 
+uint64_t k_closedir(gpr_t *reg){
+	// I know its memory leak but cant help
+	dir* dirobj = (dir*)reg->rdi;
+	dirobj->query_inode = NULL;
+	dirobj->currInode = -1;
+	return 1;
+}
+
 uint64_t k_readdir(gpr_t *reg){
 	// kprintf("Inside readdir\n");
 	dir* dirobj = (dir*)reg->rdi;
 
-	if (dirobj->currInode >= dirobj->query_inode->familyCount)
+	if (dirobj->currInode == -1 || dirobj->currInode >= dirobj->query_inode->familyCount)
 	{
 		return (uint64_t)0;
 	}
@@ -713,15 +791,18 @@ void syscall_init()
 	//kprintf("iiiiiioooo\n");
 	p[0] = k_read;
 	p[1] = k_write;
+	p[2] = k_open;
+	p[3] = k_close;
 	p[9] = k_mmap;
 	p[11] = k_munmap;
-	p[57]= syscall_fork;
+	p[57] = syscall_fork;
 	p[58] = syscall_switch;
-	p[59]=syscall_exec;
+	p[59] = syscall_exec;
 	p[60] = syscall_exit;
-	p[61]=syscall_wait;
+	p[61] = syscall_wait;
 	p[62] = k_opendir;
 	p[63] = k_readdir;
+	p[64] = k_closedir;
 	p[99] = temporary_printf;
 }
 

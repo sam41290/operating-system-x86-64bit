@@ -187,7 +187,7 @@ int check_cow(uint64_t addr)
 	
 	uint64_t *p1=(uint64_t *)base;
 	
-	//kprintf("%p\n",p1[p1_index]);
+	// kprintf("%p\n",p1[p1_index]);
 	if(p4[p4_index]!=0 && (p1[p1_index] & 0b111)==5)
 	{
 		

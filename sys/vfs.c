@@ -91,14 +91,14 @@ void init_tarfs(){
 
 	struct posix_header_ustar *header =  (struct posix_header_ustar*)(&_binary_tarfs_start);
     struct posix_header_ustar *end =  (struct posix_header_ustar*)(&_binary_tarfs_end);
-	int size=0;
+	uint64_t size=0;
     while(header < end)
     {
     	size=oct_to_dec(header->size);
-    	uint64_t dataStart = (uint64_t)(header+1); uint64_t datEnd = (uint64_t)(header+1+size);
+    	uint64_t dataStart = (uint64_t)(header+1); uint64_t datEnd = (uint64_t)(dataStart+size);
     	if ((strlen(header->name) > 0) && (header->size[0]!='\0'))
     	{
-	   		// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, size);
+	   		// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, datEnd-dataStart);
     		if (strncmp(header->name, "lib/", 4) != 0)	//Dont parse libc folder. Some bug in printf
     		{
 	    		if (header->typeflag[0] == '0')

@@ -21,6 +21,116 @@ int chdir(char* in_path){
 }
 
 
+int open(const char *pathname, int flags){
+
+	unsigned long syscallnumber = 2;
+	int f;
+
+
+	__asm__(
+	"movq %1, %%rax;\n"
+	"movq %2, %%rdi;\n"
+	"movq %3, %%rsi;\n"
+	"int $0x80;\n"
+	"movq %%rax, %0;\n"
+	: "=m" (f)
+	: "m" (syscallnumber), "m" (pathname), "m" (flags)
+	: "rax","rdi", "rsi"
+	);
+
+	return f;
+}
+
+ssize_t read(int fd, void *buf, size_t count){
+
+	unsigned long syscallnumber = 0;
+	int read_count;
+
+	__asm__(
+		"movq %1, %%rax;\n"
+		"movq %2, %%rdi;\n"
+		"movq %3, %%rsi;\n"
+		"movq %4, %%rdx;\n"
+		"int $0x80;\n"
+		"movq %%rax, %0;\n"
+		: "=m" (read_count)
+		: "m" (syscallnumber), "m" (fd), "m" ((unsigned long)buf), "m" (count)
+		: "rax","rdi", "rsi", "rdx"
+	);
+
+	//Return value doesnt work maybe need to deep copy use the parameter buff in app
+	return read_count;
+}
+File *fopen(const char *path,const char *mode)
+{
+
+	//FILE fp;
+
+	File *file=(File*)malloc(sizeof(File));
+
+	int flag;
+
+	const char *filepath=path;
+
+	const char *filemode=mode;
+
+	if(strcmp(filemode,"r")==0)
+	flag=O_RDONLY;
+	else if(strcmp(filemode,"w")==0)
+	flag=O_WRONLY | O_TRUNC;
+	else if(strcmp(filemode,"r+")==0)
+	flag=O_RDWR;
+	else if(strcmp(filemode,"w+")==0)
+	flag=O_RDWR | O_TRUNC;
+	else if(strcmp(filemode,"a+")==0)
+	flag=O_APPEND;
+	else
+	flag=O_RDONLY;
+
+	//putchar(flag + 48);
+
+
+	int f = open(filepath, flag);
+	// putchar(f+48);
+
+	//fp.fd=f;
+
+	file->fd=f;
+
+	if(f<0)
+	return NULL;
+	else
+	return file;
+
+
+}
+
+int close( int fd)
+{
+	unsigned long syscallnumber = 3;
+	int return_fd = 0;			
+
+	__asm__(
+	"movq %1, %%rax;\n"
+	"movq %2, %%rdi;\n"
+	"int $0x80;\n"
+	"movq %%rax, %0;\n"
+	: "=m" (return_fd)
+	: "m" (syscallnumber), "m" (fd)
+	: "rax","rdi"
+	);
+
+	return return_fd;
+
+}
+
+int fclose(File *fp)
+{
+	int file=fp->fd;
+	return close(file);
+}
+
+
 
 // int chdir(char *path)
 // {

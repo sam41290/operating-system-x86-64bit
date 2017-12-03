@@ -11,9 +11,9 @@ void foolcompiler(int* a){
 	return;
 }
 
-int dummysyscall(){
+void dummysyscall(){
 
-	unsigned long syscallnumber = 5;
+	unsigned long syscallnumber = 1;
 	void *addr = NULL;
 	uint64_t length = 12345;
 	int prot = 1|2;//PROT_READ;
@@ -40,38 +40,18 @@ int dummysyscall(){
 	:
 	);
 	// printf("Returned From dummysyscall %d\n", ret);
-	return ret;
+	return;
 }
 
-int testidontknow(){
+void testread(){
 
-	unsigned long syscallnumber = 5;
-		int ret = 0;
-
-	// __asm__(
-	// "movq %1,%%rax;\n"
-	// "int $0x80;\n"
-	// "movq %%rax, %0;\n"
-	// :"=m" (ret)
-	// :"m"(syscallnumber)
-	// );	
-
+	uint64_t syscallnumber = 3;
 	__asm__(
 	"movq %0,%%rax;\n"
 	"int $0x80;\n"
 	:
 	:"m"(syscallnumber)
 	);	
-
-
-
-	__asm__(
-	"movq %%rax, %0;\n"
-	:"=m" (ret)
-	:
-	);	
-
-	return ret;
 }
 
 void TESTMALLOC(){
@@ -324,7 +304,7 @@ void TESTVFS(){
         puts("\n");
     }
     // printf("readdir finished\n");
-    closedir(pDir);
+    // closedir (pDir);
 }
 
 void TESTWAIT()
@@ -386,7 +366,7 @@ void TESTEXECVPE()
 	 
 	if(pid==0)
 	{
-		yield();
+		//yield();
 		execvpe("bin/helloworld",NULL,NULL);
 	 //execvpe: variable passing and path passing test pending
 	}
@@ -402,7 +382,7 @@ void TESTEXECVPE()
 
 void emti_test()
 {
-	int *str=(int *)malloc(sizeof(int)*2048);
+	int *str=malloc(sizeof(int)*2048);
 	 
 	 str[2047]=10;
 	 
@@ -417,15 +397,8 @@ void TESTFILE(){
 		printf("Fopen failed\n");
 		return;
 	}
-	// printf("File Opened fd %d\n", file->fd);
-	char* buff = (char*) malloc(4096*sizeof(char));
-	int read_count = read(file->fd, buff, 9);
-	for (int i = 0; i < read_count; ++i)
-	{
-		printf("%c", buff[i]);
-	}
 
-	fclose(file);
+	// printf("fd - %s\n", file->fd);
 }
 
 struct try
@@ -448,10 +421,10 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 
 	 //TESTEXIT();
+<<<<<<< HEAD
+=======
 	 
-	 TESTEXECVPE();
-	 
-	 int *str=(int *)malloc(sizeof(int)*2048);
+	 int *str=malloc(sizeof(int)*2048);
 	 
 	 str[2047]=10;
 	 
@@ -476,13 +449,24 @@ int main(int argc, char *argv[], char *envp[]) {
 	//execvpe: variable passing and path passing test pending
 	
 	//TESTVFS();
+>>>>>>> 954146437e2d64819a0da3468bedb3dd7f22c0c9
 
-	// for (int i = 0; i < 2; ++i)
-	// {
-	// 	TESTFILE();
-	// }
+	// TESTFILE();
 
-	TESTVFS();
+	// struct try* m = malloc(sizeof(struct try));
+	// // *(m+sizeof(int)) = 1;
+	// // m->a = 1;
+	// m->b = 1;
+	// printf("%d\n", m->b);
+
+
+ 	int* trymalloc = (int*)malloc(2048*sizeof(int));
+ 	// printf("add malloc %p\n", trymalloc);	
+ 	// trymalloc[0] = 1;
+ 	// printf("malloc success %d\n", trymalloc[0]);
+ 	trymalloc[2047] = 2;
+ 	printf("malloc success %d\n", trymalloc[1]);
+
 
 	while(1);
 }

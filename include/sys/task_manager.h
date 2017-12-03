@@ -1,7 +1,10 @@
 #include<sys/idt.h>
+#include <sys/vfs.h>
 #ifndef _PROC_H
 #define _PROC_H
 
+
+#define MAX_FD 10
 struct vma_struct{
 	uint64_t vstart;
 	uint64_t vend;
@@ -34,6 +37,7 @@ struct pcb_t
 	__volatile__ uint64_t signalling_child;
 	__volatile__ int sigchild_state;
 	mm_struct mmstruct;
+	uint64_t* fd[MAX_FD]; 
 	uint64_t heap_top;
 	struct pcb_t *next;
 };

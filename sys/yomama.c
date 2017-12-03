@@ -86,6 +86,7 @@ void pagemama(registers_t reg)
 
 	if (RING_0_MODE == 1)
 	{
+		// kprintf("RING_0_MODE\n");
 		// kprintf("There is no process yet!! page fault for %p\n", addr);
 		// Thinking it is still in kernel mode
 		addr = (addr >> 12 << 12);	//Page Align for newly allocated page
@@ -106,6 +107,7 @@ void pagemama(registers_t reg)
 		int chk=0;
 		if(reg.err_code==7)
 		{
+			// kprintf("Why am i entering cow\n");
 			//kprintf("error code: %p\n",reg.err_code);
 			//kprintf("cow called %p\n",addr);
 			chk=check_cow(addr);
@@ -132,7 +134,7 @@ void pagemama(registers_t reg)
 	}
 
 
-	// else kprintf("\npage allocated\n");
+	// kprintf("\npage allocated\n");
 	
 	
 }
