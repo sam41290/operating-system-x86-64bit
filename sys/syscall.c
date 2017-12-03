@@ -681,6 +681,20 @@ uint64_t k_open(gpr_t *reg){
 	return -1;
 }
 
+uint64_t k_close(gpr_t *reg){
+
+	uint64_t fd_index = reg->rdi;
+	// kprintf("Request to Free %d\n", fd_index);
+
+	if (fd_index > 1)
+	{
+		// I know its memory leak but can help
+		// kprintf("Freeed %d\n", fd_index);
+		active->fd[(int)fd_index] = NULL;
+	}	
+	return 1;
+}
+
 uint64_t k_read(gpr_t *reg){
 	// kprintf("Read request arrives\n");
 
@@ -747,11 +761,19 @@ uint64_t k_opendir(gpr_t *reg){
 	return (uint64_t)dirobj;
 }
 
+uint64_t k_closedir(gpr_t *reg){
+	// I know its memory leak but cant help
+	dir* dirobj = (dir*)reg->rdi;
+	dirobj->query_inode = NULL;
+	dirobj->currInode = -1;
+	return 1;
+}
+
 uint64_t k_readdir(gpr_t *reg){
 	// kprintf("Inside readdir\n");
 	dir* dirobj = (dir*)reg->rdi;
 
-	if (dirobj->currInode >= dirobj->query_inode->familyCount)
+	if (dirobj->currInode == -1 || dirobj->currInode >= dirobj->query_inode->familyCount)
 	{
 		return (uint64_t)0;
 	}
@@ -764,13 +786,13 @@ uint64_t k_readdir(gpr_t *reg){
 	return (uint64_t)&dirobj->currDirent;
 }
 
-
 void syscall_init()
 {
 	//kprintf("iiiiiioooo\n");
 	p[0] = k_read;
 	p[1] = k_write;
 	p[2] = k_open;
+	p[3] = k_close;
 	p[9] = k_mmap;
 	p[11] = k_munmap;
 	p[57] = syscall_fork;
@@ -780,6 +802,7 @@ void syscall_init()
 	p[61] = syscall_wait;
 	p[62] = k_opendir;
 	p[63] = k_readdir;
+	p[64] = k_closedir;
 	p[99] = temporary_printf;
 }
 

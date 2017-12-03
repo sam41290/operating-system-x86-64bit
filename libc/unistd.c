@@ -105,6 +105,31 @@ File *fopen(const char *path,const char *mode)
 
 }
 
+int close( int fd)
+{
+	unsigned long syscallnumber = 3;
+	int return_fd = 0;			
+
+	__asm__(
+	"movq %1, %%rax;\n"
+	"movq %2, %%rdi;\n"
+	"int $0x80;\n"
+	"movq %%rax, %0;\n"
+	: "=m" (return_fd)
+	: "m" (syscallnumber), "m" (fd)
+	: "rax","rdi"
+	);
+
+	return return_fd;
+
+}
+
+int fclose(File *fp)
+{
+	int file=fp->fd;
+	return close(file);
+}
+
 
 
 // int chdir(char *path)

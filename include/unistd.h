@@ -32,4 +32,5 @@ pid_t getppid(void);
 void yield(void);
 #include <stdio.h>
 File *fopen(const char *path,const char *mode);
+int fclose(File *fp);
 #endif

@@ -43,5 +43,19 @@ struct dirent *readdir(DIR *dirp){
 }
 
 int closedir(DIR *dirp){
-	return 0;
+
+	unsigned long syscallnumber = 64;
+	int ret;
+
+	__asm__(
+	"movq %1, %%rax;\n"
+	"movq %2, %%rdi;\n"
+	"int $0x80;\n"
+	"movq %%rax, %0;\n"
+	: "=m" (ret)
+	: "m" (syscallnumber), "m" ((unsigned long)dirp)
+	: "rax","rdi"
+	);
+
+	return ret;
 }

@@ -11,9 +11,9 @@ void foolcompiler(int* a){
 	return;
 }
 
-void dummysyscall(){
+int dummysyscall(){
 
-	unsigned long syscallnumber = 1;
+	unsigned long syscallnumber = 5;
 	void *addr = NULL;
 	uint64_t length = 12345;
 	int prot = 1|2;//PROT_READ;
@@ -40,18 +40,38 @@ void dummysyscall(){
 	:
 	);
 	// printf("Returned From dummysyscall %d\n", ret);
-	return;
+	return ret;
 }
 
-void testread(){
+int testidontknow(){
 
-	uint64_t syscallnumber = 3;
+	unsigned long syscallnumber = 5;
+		int ret = 0;
+
+	// __asm__(
+	// "movq %1,%%rax;\n"
+	// "int $0x80;\n"
+	// "movq %%rax, %0;\n"
+	// :"=m" (ret)
+	// :"m"(syscallnumber)
+	// );	
+
 	__asm__(
 	"movq %0,%%rax;\n"
 	"int $0x80;\n"
 	:
 	:"m"(syscallnumber)
 	);	
+
+
+
+	__asm__(
+	"movq %%rax, %0;\n"
+	:"=m" (ret)
+	:
+	);	
+
+	return ret;
 }
 
 void TESTMALLOC(){
@@ -304,7 +324,7 @@ void TESTVFS(){
         puts("\n");
     }
     // printf("readdir finished\n");
-    // closedir (pDir);
+    closedir(pDir);
 }
 
 void TESTWAIT()
@@ -397,13 +417,15 @@ void TESTFILE(){
 		printf("Fopen failed\n");
 		return;
 	}
-
+	// printf("File Opened fd %d\n", file->fd);
 	char* buff = (char*) malloc(4096*sizeof(char));
 	int read_count = read(file->fd, buff, 9);
 	for (int i = 0; i < read_count; ++i)
 	{
 		printf("%c", buff[i]);
 	}
+
+	fclose(file);
 }
 
 struct try
@@ -427,9 +449,12 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 //TESTEXIT();
 
-	// TESTFILE();
+	// for (int i = 0; i < 2; ++i)
+	// {
+	// 	TESTFILE();
+	// }
 
-
+	TESTVFS();
 
 	while(1);
 }
