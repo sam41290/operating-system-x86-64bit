@@ -2,6 +2,39 @@
 #include <stdlib.h>
 #include <string.h>
 
+unsigned int sleep(unsigned int seconds)
+{
+	unsigned long syscallnumber = 56;
+	
+	uint64_t start=0;
+	
+	uint64_t time=0;
+	
+	while(1)
+	{
+		if((time - start)==seconds)
+			break;
+
+		__asm__(
+			"movq %1, %%rax;\n"
+			"int $0x80;\n"
+			"movq %%rax, %0;\n"
+			: "=m"(time)
+			: "m" (syscallnumber)
+			: "rax","rdi"
+		);
+		
+		if(start==0)
+			start=time;
+	
+	}
+	
+
+	return time - start;
+	
+}
+
+
 int chdir(char* in_path){
 
 	unsigned long syscallnumber = 80;
@@ -180,11 +213,15 @@ char* getcwd(char *buf, unsigned long size){		//TODO change int size to size_t
 }
 
 
+//int ctr=0;
+
 int execvpe(const char *filename, char *const argv[], char *const envp[]){
 
 	// shputs("execve:");shputs(filename);shputs(argv[0]);
 	
 	
+	//if(ctr==2)
+		//while(1);
 
 	unsigned long syscallnumber = 59;
 	int ret;
@@ -201,6 +238,8 @@ int execvpe(const char *filename, char *const argv[], char *const envp[]){
 		: "m" (syscallnumber), "m" (filename), "m" (argv), "m" (envp)
 		: "rax","rdi", "rsi", "rdx"
 	);
+	//if(ctr==2)
+		//while(1);
 
 	return ret;
 }

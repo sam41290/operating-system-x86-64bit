@@ -64,14 +64,16 @@ PCB *get_nextproc()
 	
 	while(1)
 	{
+		//kprintf("proc_start %d proc_end %d\n",proc_start,proc_end);
 		if(proc_start==proc_end)
 		{
 			kprintf("0 process in the queue\n");
 			return NULL;
 		}
 		temp=all_pro + proc_Q[proc_start];
+		proc_Q[proc_start]=-1;
 		proc_start=(proc_start + 1)%101;
-		if(temp->state!=5)
+		if(proc_descriptor[temp->sno]==1)
 			break;
 	}
 	//kprintf("from get next new kstack:%p new:%p\n",(temp)->k_stack,(temp)->u_stack);
