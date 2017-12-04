@@ -350,7 +350,6 @@ int execvp(const char *file, char* argv[])
     int k=0;
     int len=strlen(path);
 //Go to each path defined in env and search the command
-
     for (int j = 0;j<=len; ++j)
     {
             if(path[j]!=':' && path[j]!='\0')
@@ -368,14 +367,11 @@ int execvp(const char *file, char* argv[])
                     }
                     dir[k]='\0';
                     k=0;
-
                     //Run execve
                     // LOG("%s\n", dir);
-
                     argv[0] = dir;
                     execve(dir, argv, NULL);
                     //puts("Failed");
-
             }
     }
     return -1;

@@ -329,6 +329,9 @@ void TESTVFS(){
 
 void TESTWAIT()
 {
+	printf("in wait\n");
+	
+	//while(1);
 	int x=5;
 	pid_t pid;
 	pid=fork();
@@ -448,12 +451,13 @@ int main(int argc, char *argv[], char *envp[]) {
 	 //TESTWAIT();
 	 
 	 
-	 TESTEXIT();
+	 //TESTEXIT();
 	 
 	 TESTEXECVPE();
 	 
+	 //printf("abcd 1234\n");
 
-	 //TESTWAIT();
+	 TESTWAIT();
 	 
 	 
 	 
