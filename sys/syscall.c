@@ -739,6 +739,14 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->ppid=active->pid;
 	child->entry_point=active->entry_point;
 	child->heap_top =active->heap_top;
+	int dircpy = 0;
+	for (; active->currentDir[dircpy] != '\0'; ++dircpy)
+	{
+		child->currentDir[dircpy] = active->currentDir[dircpy];
+	}
+	child->currentDir[dircpy] = '\0';
+
+	
 	
 	(child->mmstruct).vma_list=NULL;
 	copy_vma(child);
@@ -817,6 +825,7 @@ uint64_t k_open(gpr_t *reg){
 	char* filePath = (char*)reg->rdi;
 	// uint64_t flags = reg->rsi;   	//TODO use this
 
+	// kprintf("Request to open %s\n", filePath);
 	inode* query = GetInode(filePath);
 
 	if (query == NULL || (query != NULL && query->type == DIR))
@@ -863,6 +872,8 @@ uint64_t k_read(gpr_t *reg){
 	char* buf = (char*)reg->rsi;
 	uint64_t count = reg->rdx;
 	uint64_t read_count = 0;
+
+	// kprintf("fd_index %d, count %d\n", fd_index, count);
 	if (fd_index == 0)
 	{
 		uint64_t buff = reg->rsi;
@@ -876,6 +887,7 @@ uint64_t k_read(gpr_t *reg){
 		// kprintf("Going to read %d\n", file->node->end-file->node->start);
 		char* ch = (char*)file->currentoffset;
 		uint64_t start = file->currentoffset; uint64_t end = file->currentoffset + count;
+
 		for (uint64_t i = start; i < end; ++i)
 		{
 			if (i >= file->node->end)
