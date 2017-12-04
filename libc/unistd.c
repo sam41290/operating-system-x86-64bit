@@ -215,9 +215,12 @@ int fclose(File *fp)
 int execvpe(const char *filename, char *const argv[], char *const envp[]){
 
 	// shputs("execve:");shputs(filename);shputs(argv[0]);
+	
+	
 
 	unsigned long syscallnumber = 59;
 	int ret;
+	
 
 	__asm__(
 		"movq %1, %%rax;\n"
@@ -236,8 +239,10 @@ int execvpe(const char *filename, char *const argv[], char *const envp[]){
 
 pid_t fork(void)
 {
+	
 	unsigned long syscallnumber = 57;
 	pid_t ret;
+
 
 	__asm__(
 		"movq %1, %%rax;\n"

@@ -230,11 +230,6 @@ uint64_t syscall_switch(gpr_t *reg)
 		}
 		RING_0_MODE=0;	
 		
-		//kprintf("switching\n");
-		
-		//gpr_t *chk_reg=(gpr_t *)active->k_stack;
-		//kprintf("new process entry point: %p\n",chk_reg->rip);
-		
 		__asm__(
 		"movq %0,%%rsp;\n"
 		"popq %%r15;\n"
@@ -431,20 +426,39 @@ uint64_t count_args(char **args)
 	return ctr;
 }
 
-void copy_args(char **src,char **tgt,int ctr)
-{
-	for(int i=0;i<ctr;i++)
-	{
-		tgt[i]=src[i];
-	}
-}
-
 void strcpy(char *src,char *tgt,int len)
 {
 	int i;
+	//kprintf("4444 args: %s\n",src);
 	for(i=0;i<len;i++)
 		tgt[i]=src[i];
 	tgt[i]='\0';
+}
+
+void copy_args(char **src,char **tgt,int ctr)
+{
+	int i;
+	//kprintf("2222 args: %s\n",src[0]);
+	for(i=0;i<ctr && src[i]!=NULL;i++)
+	{
+		//kprintf("3333 args: %s\n",src[i]);
+		strcpy(src[i],tgt[i],strlen(src[i]));
+		
+		//kprintf("copy args:%s %s\n",src[i],tgt[i]);
+		//tgt[i]=src[i];
+	}
+	tgt[i]=NULL;
+	//kprintf("5555 args: %s\n",tgt[0]);
+}
+
+
+
+void cpy_filename2args(char *name,char **args,int args_ctr)
+{
+	int i;
+	for(i=args_ctr;i>0;i--)
+		args[i]=args[i-1];
+	args[i]=name;
 }
 
 uint64_t syscall_exec(gpr_t *reg)
@@ -460,17 +474,27 @@ uint64_t syscall_exec(gpr_t *reg)
 	
 	uint64_t path_ctr=count_args(path);
 	
+	//====copy the file name, arguements and paths before the page tables are changed
+	
 	char file[strlen(file_name)];
 	strcpy(file_name,file,namelen);
 	
-	char *cpy_args[args_ctr];
-	copy_args(args,cpy_args,args_ctr);
+	//increment the args count by 1 to store the file name
+	args_ctr++;
+	
+	char cpy_args[args_ctr][1024];	
+	for(int i=0;i<(args_ctr - 1);i++)
+		strcpy(args[i],cpy_args[i],strlen(args[i]));
+	
+	//copy_args(args,(char **)cpy_args,args_ctr);
 	
 	char *cpy_path[path_ctr];
 	copy_args(path,cpy_path,path_ctr);
 	
-	int file_found=0;
+	//------------------------------------------------------------------------
 	
+	//=========create a new process for execvpe binary======================
+	/* new process is created so that it doesnt interfere with the current processes address space*/
 	int i;
 	for(i=0;i<100;i++)
 	{
@@ -486,11 +510,11 @@ uint64_t syscall_exec(gpr_t *reg)
 	child=&all_pro[i];
 	child->state=1;
 	child->ppid=active->pid;
-	change_ptable(child->cr3);
-	init_stack(child);
-	
+	change_ptable(child->cr3);//page table changed to new process PML4
 	
 	create_kstack(child);
+	//---------------------------------------------------------------------------
+	//store current process stack pointer. Incase execvpe fails, the stack will be restored and program will return safely
 	
 	uint64_t parent_stack;
 	
@@ -500,17 +524,28 @@ uint64_t syscall_exec(gpr_t *reg)
 	:
 	);
 	
-	
-	copy_kstack(child);
-		
+	//----------------------------
+	copy_kstack(child); //stack changed to new process stack
+	init_stack(child);	
 	//kprintf("file name:%s",file);
+	
+	
+	
+	int file_found=0;
+	
+	//=======================File search begins=============================
+	
+	/*If absolute path provided, then search for the file in that path only, 
+	else search for the file in the paths provided in envps parameter*/
 	
 	if(check_abs_path(file))
 	{
 		char *file_path=file;
 		if(file[0]=='/')
 			file_path++;
-		file_found=scan_tarfs(child,file);
+		file_found=scan_tarfs(child,file_path);
+		if(file_found)
+			strcpy(file_path,file_name,strlen(file_path));
 	}
 	else
 	{
@@ -527,16 +562,22 @@ uint64_t syscall_exec(gpr_t *reg)
 					file_path++;
 				file_found=scan_tarfs(child,file_path);
 				if(file_found)
+				{
+					strcpy(file_path,file_name,strlen(file_path));
 					break;
+				}
 			}
 			if(file_found)
 				break;
 			i++;
 		}
 	}
+	
+	//---------------FILE search ends----------------------------------
+	
 	if(file_found==0)
 	{
-		
+		//if file not found then restore page table and stack and return
 		change_ptable(active->cr3);
 		__asm__(
 		"movq %0,%%rsp;\n"
@@ -547,35 +588,96 @@ uint64_t syscall_exec(gpr_t *reg)
 		return 0;
 	}
 	
-	copy_args(cpy_args,args,args_ctr);
-	copy_args(cpy_path,path,path_ctr);
+	/*Copy the arguements into the new processes address space*/
+	//copy_args((char **)cpy_args,args,args_ctr);
+	for(i=0;i<(args_ctr - 1);i++)
+		strcpy(cpy_args[i],args[i],strlen(cpy_args[i]));
+		
+	cpy_filename2args(file_name,args,args_ctr); //copies filename into args
 	
-	//kprintf("old kstack: %p new kstack: %p\n",active->k_stack
+	copy_args(cpy_path,path,path_ctr);	
+	/*---------------Create VMA entries for the arguements------*/
+	
+	vma *new_vma=alloc_vma((uint64_t)args, (uint64_t)args + args_ctr);
+	append_to_vma_list(child,new_vma);
+	increment_childpg_ref((uint64_t)args, (uint64_t)args + args_ctr);
+	
+	for(i=0;i<args_ctr;i++)
+	{
+		vma *new_vma=alloc_vma((uint64_t)args[i], (uint64_t)args[i] + strlen(args[i]));
+		append_to_vma_list(child,new_vma);
+		increment_childpg_ref((uint64_t)args, (uint64_t)args + args_ctr);
+	}
+	
+	//--------------------------------------------------------------//
+	
+	
+	
+	//kprintf("old kstack: %p new kstack: %p\n",parent_stack,child->k_stack);
+	
+	
+	//kprintf("current stack: %p\n",current_stack);
+	//kprintf("new stack base: %p\n",child->k_stackbase);
+	//kprintf("old stack base: %p\n",active->k_stackbase);
+	
 	
 	uint64_t stackdiff=active->k_stackbase-(uint64_t)reg;
-	gpr_t *new_rg=(gpr_t *)(active->k_stackbase - stackdiff);
+	//gpr_t *new_rg=(gpr_t *)(active->k_stackbase - stackdiff);
+	gpr_t *child_rg=(gpr_t *)(child->k_stackbase - stackdiff);
+	
+	//kprintf("active rip addr: %p child rip addr: %p\n",&new_rg->rip,&child_rg->rip);
+	
+	//kprintf("active rip: %p child rip: %p\n",new_rg->rip,child_rg->rip);
 	
 	active->waitstate=WAITING_TO_DIE;
 	active->waitingfor=child->pid;
 	proc_Q[proc_end]=(uint64_t)active->sno;
 	proc_end=(proc_end + 1)%101;
+	
 	active=child;
-	new_rg->rip=active->entry_point;
-	new_rg->rdi=(uint64_t)args;
-	new_rg->usersp=active->u_stack;
+	
+	child_rg->rip=active->entry_point;
+	child_rg->rdi=(uint64_t)args;
+	child_rg->usersp=active->u_stack;
 	
 	i=0;
 	
 	for(i=0;args[i]!=NULL && args!=NULL;i++);
 	
-	new_rg->rsi=i;
+	child_rg->rsi=i;
+	
+	active->k_stack=(uint64_t)(child_rg);
 	
 	set_tss_rsp((void *)active->k_stack);
+	
+	RING_0_MODE=0;	
+		
+	__asm__(
+	"movq %0,%%rsp;\n"
+	"popq %%r15;\n"
+	"popq %%r14;\n"
+	"popq %%r13;\n"
+	"popq %%r12;\n"
+	"popq %%r11;\n"
+	"popq %%r10;\n"
+	"popq %%r9;\n"
+	"popq %%r8;\n"
+	"popq %%rbp;\n"
+	"popq %%rdi;\n"
+	"popq %%rsi;\n"
+	"popq %%rdx;\n"
+	"popq %%rcx;\n"
+	"popq %%rbx;\n"
+	"popq %%rax;\n"
+	"iretq;\n"
+	:
+	:"g"(active->k_stack)
+	);
 	
 	
 	//kprintf("file found entry point %p\n",new_rg->rip);
 	
-	return 1;
+	return 0;
 }
 
 //------------------------------------------------EXECVPE END--------------------------------------//
@@ -646,7 +748,33 @@ uint64_t syscall_fork(gpr_t *reg)
 	child_rg->rax=0;
 	//kprintf("child cr3: %p parent cr3: %p\n",child->cr3,active->cr3);
 	active=child;
-	set_tss_rsp((void *)active->k_stack);	
+	active->k_stack=(uint64_t)(child_rg);
+	
+	set_tss_rsp((void *)active->k_stack);
+	
+	RING_0_MODE=0;	
+		
+	__asm__(
+	"movq %0,%%rsp;\n"
+	"popq %%r15;\n"
+	"popq %%r14;\n"
+	"popq %%r13;\n"
+	"popq %%r12;\n"
+	"popq %%r11;\n"
+	"popq %%r10;\n"
+	"popq %%r9;\n"
+	"popq %%r8;\n"
+	"popq %%rbp;\n"
+	"popq %%rdi;\n"
+	"popq %%rsi;\n"
+	"popq %%rdx;\n"
+	"popq %%rcx;\n"
+	"popq %%rbx;\n"
+	"popq %%rax;\n"
+	"iretq;\n"
+	:
+	:"g"(active->k_stack)
+	);	
 	
 	return child->pid;
 }

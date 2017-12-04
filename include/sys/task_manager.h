@@ -62,6 +62,8 @@ void copy_parent_stack();
 uint64_t mappageTable(uint64_t proc_index, int new);
 void copy_vma(PCB *proc);
 void create_new_process(int proc_index,int new);
+void increment_childpg_ref(uint64_t vaddr_start,uint64_t vaddr_end);
+
 void context1();
 
 void context2();
