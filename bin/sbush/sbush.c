@@ -387,7 +387,8 @@ void TESTEXECVPE()
 	if(pid==0)
 	{
 		yield();
-		execvpe("bin/helloworld",NULL,NULL);
+		char *args[]={"abcd","1234",NULL};
+		execvpe("bin/helloworld",args,NULL);
 	 //execvpe: variable passing and path passing test pending
 	}
 	if(pid > 0)
@@ -436,7 +437,7 @@ struct try
 
 int main(int argc, char *argv[], char *envp[]) {
 
-	puts("sbush> Hello World!!\n");
+	//puts("sbush> Hello World!!\n");
 
 
 	// TESTMALLOC();
@@ -447,18 +448,11 @@ int main(int argc, char *argv[], char *envp[]) {
 	 //TESTWAIT();
 	 
 	 
-	 //TESTEXIT();
+	 TESTEXIT();
 	 
 	 TESTEXECVPE();
 	 
-	 int *str=(int *)malloc(sizeof(int)*2048);
-	 
-	 str[2047]=10;
-	 
-	 printf("%d",str[2047]);
-	 
-	 emti_test();
-	 
+
 	 //TESTWAIT();
 	 
 	 
@@ -482,7 +476,7 @@ int main(int argc, char *argv[], char *envp[]) {
 	// 	TESTFILE();
 	// }
 
-	TESTVFS();
+	//TESTVFS();
 
 	while(1);
 }

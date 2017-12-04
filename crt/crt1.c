@@ -1,9 +1,13 @@
 #include <stdlib.h>
+#include<stdio.h>
 
 void _start(void) {
 	
-	uint64_t argc = 0;
-	uint64_t args;
+	
+	//printf("in start!!!!!!!!!\n");
+	
+	__volatile__ uint64_t argc = 0;
+	__volatile__ uint64_t args;
     char** argv;
 
 	__asm__(
@@ -14,6 +18,8 @@ void _start(void) {
 	);
 
 	argv=(char **)args;
+	//printf("argc=%d\n",argc);
+	//printf("argc=%d\n",argc);
 	
     main(argc, argv,NULL);
 	//return;
