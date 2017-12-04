@@ -15,7 +15,7 @@ char *getcwd(char *buf, size_t size);
 pid_t fork();
 int execvpe(const char *file, char *const argv[], char *const envp[]);
 pid_t wait(int *status);
-int waitpid(int pid, int *status);
+int waitpid(int pid, int *status, int options);
 
 unsigned int sleep(unsigned int seconds);
 
@@ -32,5 +32,15 @@ pid_t getppid(void);
 void yield(void);
 #include <stdio.h>
 File *fopen(const char *path,const char *mode);
+char fgetc(File* fp);
 int fclose(File *fp);
+
+//Just for sake of build
+#define WNOHANG 1
+
+int execvp(const char *file, char* argv[]);
+int execve(const char *filename, char *const argv[], char *const envp[]);
+int waitpid(int pid, int *status, int options);
+int dup2(int oldfd, int newfd);
+
 #endif

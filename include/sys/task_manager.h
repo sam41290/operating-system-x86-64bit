@@ -40,6 +40,7 @@ struct pcb_t
 	uint64_t* fd[MAX_FD]; 
 	uint64_t heap_top;
 	struct pcb_t *next;
+	char* currentDir;
 };
 
 typedef struct pcb_t PCB;

@@ -786,6 +786,101 @@ uint64_t k_readdir(gpr_t *reg){
 	return (uint64_t)&dirobj->currDirent;
 }
 
+uint64_t k_chdir(gpr_t *reg){
+
+	char* path = (char*)reg->rdi;
+	if(path == NULL){
+		return 0;
+	}
+
+	char* newPath = NULL;
+	if (path[0] == '/')
+	{
+		if (NULL == GetInode(path))
+		{
+			return 0;
+		}
+		newPath = path;
+	}
+	else if(path[0] != '.')
+	{
+		newPath = active->currentDir;
+		int lastPos = 0;
+		for (; newPath[lastPos] != '\0' && lastPos < 512; ++lastPos);
+		int lastPos_bk = lastPos;
+		for (int i = 0; path[i] != '\0'; ++i)
+		{
+			newPath[lastPos++] = path[i]; 
+		}
+		newPath[lastPos++] = '/';
+		newPath[lastPos] = '\0';
+
+		if (NULL == GetInode(newPath))
+		{
+			//Reset newPath
+			newPath[lastPos_bk] = '\0';
+			return 0;
+		}
+	}
+	else if (path[0] == '.' && path[1] == '.')
+	{
+		//Do something babes use head
+		newPath = active->currentDir;
+		int lastPos = 0;
+		for (; newPath[lastPos] != '\0' && lastPos < 512; ++lastPos);
+		int goback = lastPos-2;
+		for ( ; goback >= 0	; --goback)
+		{
+			if (newPath[goback] == '/')
+			{
+				newPath[++goback] = '\0';
+				break;
+			}
+		}
+	}
+	else
+	{
+		//Dont do anything 
+		return 0;
+	}
+
+	// kprintf("Going to change directory %s", newPath);
+
+
+	int i = 0;
+	for (; newPath[i] != '\0'; ++i)
+	{
+		if (i >= 510)	
+		{
+			kprintf("We dont support path to be more than 512 characters!\n");
+			break;
+		}
+
+		active->currentDir[i] = newPath[i];
+	}
+	active->currentDir[i] = '\0';
+	return 1;
+}
+
+uint64_t k_getcwd(gpr_t *reg){
+	
+	char* buff = (char*)reg->rdi;
+	uint64_t size = reg->rsi;
+
+	int i = 0;
+	for (; active->currentDir[i] != '\0'; ++i)
+	{
+		if (i >= size-1)	
+		{
+			break;
+		}
+
+		buff[i] = active->currentDir[i];
+	}
+	buff[i] = '\0';
+	return (uint64_t)buff;
+}
+
 void syscall_init()
 {
 	//kprintf("iiiiiioooo\n");
@@ -803,6 +898,8 @@ void syscall_init()
 	p[62] = k_opendir;
 	p[63] = k_readdir;
 	p[64] = k_closedir;
+	p[79] = k_getcwd;
+	p[80] = k_chdir;
 	p[99] = temporary_printf;
 }
 

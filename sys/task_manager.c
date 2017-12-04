@@ -448,7 +448,9 @@ void create_new_process(int proc_index,int new){
 	all_pro[proc_index].waitingfor=0;
 	all_pro[proc_index].signalling_child=0;
 	all_pro[proc_index].sigchild_state=5;
-	
+	(all_pro + proc_index)->currentDir=kmalloc(512*sizeof(char));	
+	(all_pro + proc_index)->currentDir[0] = '/';
+	(all_pro + proc_index)->currentDir[1] = '\0';
 	proc_descriptor[proc_index]=1;
 }
 

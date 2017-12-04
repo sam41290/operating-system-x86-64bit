@@ -10,7 +10,7 @@ int chdir(char* in_path){
 	__asm__(
 		"movq %1, %%rax;\n"
 		"movq %2, %%rdi;\n"
-		"syscall;\n"
+		"int $0x80;\n"
 		"movq %%rax, %0;\n"
 		: "=m" (ret)
 		: "m" (syscallnumber), "m" (in_path)
@@ -18,6 +18,26 @@ int chdir(char* in_path){
 	);
 
 	return ret;
+}
+
+char* getcwd(char *buf, unsigned long size){		//TODO change int size to size_t
+
+	unsigned long syscallnumber = 79;
+	char* ret = (char* )malloc(size);
+
+	__asm__(
+		"movq %1, %%rax;\n"
+		"movq %2, %%rdi;\n"
+		"movq %3, %%rsi;\n"
+		"int $0x80;\n"
+		"movq %%rax, %0;\n"
+		: "=m" (ret)
+		: "m" (syscallnumber), "m" (buf), "m" (size)
+		: "rax","rdi", "rsi"
+	);
+
+	buf=ret;
+	return buf;
 }
 
 
@@ -61,6 +81,36 @@ ssize_t read(int fd, void *buf, size_t count){
 	//Return value doesnt work maybe need to deep copy use the parameter buff in app
 	return read_count;
 }
+
+char fgetc(File* fp){
+	// This misght be buggy.. Not tested
+	unsigned long syscallnumber = 0;
+	int fd = fp->fd;
+	int count = 1;
+	char ch;
+	int read_count;
+
+	__asm__(
+		"movq %1, %%rax;\n"
+		"movq %2, %%rdi;\n"
+		"movq %3, %%rsi;\n"
+		"movq %4, %%rdx;\n"
+		"int $0x80;\n"
+		"movq %%rax, %0;\n"
+		: "=m" (read_count)
+		: "m" (syscallnumber), "m" (fd), "m" (ch), "m" (count)
+		: "rax","rdi", "rsi", "rdx"
+	);
+
+	if (read_count != 0)
+	{
+		return ch;
+	}
+
+	return '\0';
+}
+
+
 File *fopen(const char *path,const char *mode)
 {
 
@@ -159,25 +209,7 @@ int fclose(File *fp)
 // }
 
 
-char* getcwd(char *buf, unsigned long size){		//TODO change int size to size_t
 
-	unsigned long syscallnumber = 79;
-	char* ret = (char* )malloc(size);
-
-
-	__asm__(
-		"movq %1, %%rax;\n"
-		"movq %2, %%rdi;\n"
-		"movq %3, %%rsi;\n"
-		"syscall;\n"
-		"movq %%rax, %0;\n"
-		: "=m" (ret)
-		: "m" (syscallnumber), "m" (buf), "m" (size)
-		: "rax","rdi", "rsi"
-	);
-	buf=ret;
-	return buf;
-}
 
 
 int execvpe(const char *filename, char *const argv[], char *const envp[]){
@@ -275,8 +307,11 @@ pid_t wait(int *status){
 	return ret;	
 }
 
-int waitpid(int pid, int *status){
-	
+int waitpid(int pid, int *status, int options){
+	if (options > 0)
+	{
+		puts("Need to implement waitpid with WNOHANG\n");
+	}	
 	//printf("calling wait: %p\n",status);
 	
 	unsigned long syscallnumber = 61;
@@ -315,6 +350,10 @@ int pipe(int* pipefd){
 }
 
 int dup2(int oldfd, int newfd){
+
+	puts("We dont support dup2");
+	return -1;
+
 	unsigned long syscallnumber = 33;
 	int ret;
 
@@ -332,12 +371,18 @@ int dup2(int oldfd, int newfd){
 	return ret;		
 }
 
-/*
+
 int execvp(const char *file, char* argv[])
 {
+	puts("Need to implement execvp");
+	return -1;
         // puts("Hello");
+    
+    //Commented for build
     char *path;
-    path=getenv("PATH");
+    // path=getenv("PATH");
+
+
     // LOGG("execvp");LOGG( path);
     // puts(path);
     // int cmdind=0;
@@ -368,11 +413,19 @@ int execvp(const char *file, char* argv[])
                     // LOG("%s\n", dir);
 
                     argv[0] = dir;
-                    execve(dir, argv, NULL);
+                    //Commented for build
+                    // execve(dir, argv, NULL);
                     //puts("Failed");
 
             }
     }
     return -1;
 }
-*/
+
+int execve(const char *filename, char *const argv[], char *const envp[])
+{
+	puts("Need to implement execvp\n");
+	return -1;
+}
+
+
