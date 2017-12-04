@@ -283,7 +283,7 @@ int ExecuteCAT(){
 		wait(&status);
 	}
 
-	return 1;
+	return 0;
 }
 
 

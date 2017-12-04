@@ -538,7 +538,7 @@ uint64_t syscall_exec(gpr_t *reg)
 	create_new_process(i,NEW);
 	
 	child=&all_pro[i];
-	kprintf("new execvpe sno: %d\n",child->sno);
+	// kprintf("new execvpe sno: %d\n",child->sno);
 	//if(exectr==2)
 		//while(1);
 	child->state=1;
@@ -774,7 +774,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	
 	child_rg->usersp=child->u_stack;
 
-	//kprintf("child kstack:%p ustack:%p\n",child->k_stack,child->u_stack);
+	//("child kstack:%p ustack:%p\n",child->k_stack,child->u_stack);
 	//kprintf("parent kstack:%p ustack:%p\n",active->k_stack,active->u_stack);
 
 	

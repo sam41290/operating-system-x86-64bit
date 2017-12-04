@@ -18,7 +18,7 @@ int main(int argc, char *argv[], char *envp[]) {
 	else if(argc==2)
 	{
 		char* path = argv[1];
-		printf("param %s\n", path);
+		// printf("param %s\n", path);
 
 		DIR *dir;
 		struct dirent *ent;

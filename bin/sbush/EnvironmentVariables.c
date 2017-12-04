@@ -97,7 +97,7 @@ char * getenvArgs(int pos,char *envvar)
 
 char *getargs(char *args)
 {
-        puts("Need to implement getargs\n");
+        // puts("Need to implement getargs\n");
         return args;
                 // shputs("test:");
                 // puts(args);

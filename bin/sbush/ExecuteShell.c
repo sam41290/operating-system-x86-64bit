@@ -18,7 +18,7 @@ int Execute(char *cmd, char** vector, int vecCount)
         }
 
 	//TODO: check if inbuilt command. if yes then run and exit
-        puts("Enter Execute");
+        // puts("Enter Execute");
         if (ExecuteBuiltIn(vector, vecCount) == 0)
         {
                 return 0;

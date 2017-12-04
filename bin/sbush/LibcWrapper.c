@@ -6,7 +6,8 @@
 int ChangeDirectory(char* path)
 {
 	LOG("%s\n",path);
-    return chdir(path);
+    chdir(path);
+    return 0;
 }
 
 

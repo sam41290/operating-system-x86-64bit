@@ -4,7 +4,7 @@
 #include "Utilities.h"
 
 
-int main_test(int argc, char *argv[], char *envp[]) {
+int main(int argc, char *argv[], char *envp[]) {
 
 
 	UpdateShellPrompt();
