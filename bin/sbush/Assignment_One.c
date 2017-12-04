@@ -243,15 +243,17 @@ int ExecuteBinary(char** vector, int vecCount){
 	}
 }
 
-int ExecuteLS(){
+int ExecuteLS(char* path){
 	pid_t pid=fork();
 	 
 	if(pid==0)
 	{
 		//yield();
-		char* myArgs[1];
-		myArgs[0] = "Hi";
-		myArgs[1] = NULL;
+		// char* myArgs[1];
+		// myArgs[0] = path;
+		// myArgs[1] = NULL;
+
+		char *myArgs[]={path,NULL,NULL};
 
 		execvpe("bin/ls",myArgs,NULL);
 	 //execvpe: variable passing and path passing test pending
@@ -284,6 +286,8 @@ int ExecuteCAT(){
 	return 1;
 }
 
+
+
 int ExecuteBuiltIn(char** vector, int vecCount){
 
 	char* cmd;
@@ -305,7 +309,8 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	}
 	else if (0 == strncmp(cmd, "ls", 2))
 	{
-		return MyLS(GetCurrentDir());				//TODO Clean it
+		// return MyLS(GetCurrentDir());				//TODO Clean it
+		return ExecuteLS(GetCurrentDir());
 	}
 	else if (0 == strncmp(cmd, "cat", 3))
 	{

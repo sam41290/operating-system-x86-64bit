@@ -20,8 +20,6 @@ int main(int argc, char *argv[], char *envp[]) {
 		char* path = argv[1];
 		printf("param %s\n", path);
 
-		path = "/";
-
 		DIR *dir;
 		struct dirent *ent;
 		if ((dir = opendir (path)) != NULL) {

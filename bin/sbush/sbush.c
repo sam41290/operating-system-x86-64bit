@@ -386,8 +386,9 @@ void TESTEXECVPE()
 	 
 	if(pid==0)
 	{
-		//yield();
-		execvpe("bin/helloworld",NULL,NULL);
+		yield();
+		char *args[]={"abcd","1234",NULL};
+		execvpe("bin/helloworld",args,NULL);
 	 //execvpe: variable passing and path passing test pending
 	}
 	if(pid > 0)
@@ -465,7 +466,7 @@ struct try
 	int b;
 }__attribute__((packed));
 
-int main_test(int argc, char *argv[], char *envp[]) {
+int main(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
 
@@ -487,6 +488,8 @@ int main_test(int argc, char *argv[], char *envp[]) {
 
 	// TESTVFS();
 
-	TESTCHDIR();
+	// TESTCHDIR();
+
+	TESTEXECVPE();
 	while(1);
 }
