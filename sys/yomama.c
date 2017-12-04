@@ -39,6 +39,7 @@ void yomama(void)
 
 int time=0;
 int frac_time=0;
+int time_in_sec=0;
 
 void timemama(void)
 {
@@ -50,9 +51,9 @@ void timemama(void)
 		frac_time=0;
 
 		//int ms=time%1000;
-		int s=time/1000;
+		time_in_sec=time/1000;
 
-		flushtime(s);
+		flushtime(time_in_sec);
 	}
 }
 

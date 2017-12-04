@@ -232,7 +232,7 @@ void TESTCONTEXTSWITCH(){
 		 yield();
 		 //printf("I am parent 1.0\n");
 		 //yield();
-		 while(1);
+		 //while(1);
 		
 	 }
 	 if(pid==0)
@@ -243,7 +243,8 @@ void TESTCONTEXTSWITCH(){
 		 printf("I am child %d\n",a);
 		 yield();
 		 printf("I am child 1.1\n");
-		 while(1);
+		 //while(1);
+		 exit(0);
 	 }
 }
 
@@ -349,6 +350,7 @@ void TESTWAIT()
 			printf("I am child 2.3\n");
 			yield();
 			printf("I am child 2.4\n");
+			sleep(5);
 			printf("child 2 closing\n");
 			exit(0);
 		}
@@ -383,15 +385,21 @@ void TESTWAIT()
 }
 
 
-void TESTEXECVPE()
+void TESTEXECVPE(int a)
 {
 	pid_t pid=fork();
 	 
 	if(pid==0)
 	{
 		yield();
-		char *args[]={"abcd","1234",NULL};
-		execvpe("bin/helloworld",args,NULL);
+		if(a==2)
+		{
+		char *args[]={"abcd","2",NULL};
+		execvpe("bin/helloworld",args,NULL);}
+		else
+		{
+		char *args[]={"abcd","1",NULL};
+		execvpe("bin/helloworld",args,NULL);}
 	 //execvpe: variable passing and path passing test pending
 	}
 	if(pid > 0)
@@ -484,15 +492,28 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 //TESTEXIT();
 	 
-	 TESTEXECVPE();
+	 TESTEXECVPE(1);
+	 //
+	 printf("back from execvpe\n");
+	 //
+	 TESTEXECVPE(2);
+	 //
+	 TESTEXECVPE(2);
 	 
+	 TESTEXECVPE(2);
+	 //
+	 TESTEXECVPE(2);
+	 //
+	 TESTWAIT();
 	 //printf("abcd 1234\n");
 
-	 TESTWAIT();
+	// TESTWAIT();
+	 
+	  //TESTCONTEXTSWITCH();
 	 
 	 
 	 
-	 //TESTEXECVPE();
+	 //TESTEXECVPE(1);
 	 
 	 //test[0]='A';
 	 

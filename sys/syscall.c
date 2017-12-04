@@ -30,7 +30,14 @@ extern uint64_t global_pid;
 extern struct terminal terminal_for_keyboard;
 extern uint64_t RING_0_MODE;
 
+extern int time_in_sec;
 
+int exectr=0;
+
+uint64_t syscall_time(gpr_t * reg)
+{
+	return time_in_sec;
+}	
 
 uint64_t dead(gpr_t *reg){
 
@@ -151,6 +158,7 @@ void kill_proc()
 			break;
 		}
 	}
+	active=NULL;
 	return;
 }
 
@@ -180,9 +188,19 @@ uint64_t syscall_switch(gpr_t *reg)
 	}
 	PCB *p_to=get_nextproc();
 	active=p_to;
+	//if (exectr==3)
+	//{
+	//	kprintf("pid: %d\n",active->pid);
+	//	kprintf("sno: %d\n",active->sno);
+	//	kprintf("state: %d\n",active->state);
+	//	kprintf("waitstate: %d\n",active->waitstate);
+	//	//while(1);
+	//}
 	set_tss_rsp((void *)active->k_stack);
-	//kprintf("switching to %d %d\n",active->pid,active->waitstate);
+	//kprintf("switching to %d %d ",active->pid,active->waitstate);
 	change_ptable(active->cr3);
+	
+				//while(1);
 	
 	if(active->state==0)
 	{
@@ -218,13 +236,21 @@ uint64_t syscall_switch(gpr_t *reg)
 			//kprintf("\n waiting to die called\n");
 			//while(1);
 			if(active->signalling_child==active->waitingfor && active->sigchild_state==0)
+			{	
 				kill_proc();
+				//if (exectr==2)
+				//{
+				//	exectr=3;
+				//	//while(1);
+				//}
+			}
 			else
 			{
 				proc_Q[proc_end]=(uint64_t)active->sno;
 				proc_end=(proc_end + 1)%101;
 				active=NULL;
 			}
+			
 			syscall_switch(reg);
 			return 0;
 		}
@@ -461,8 +487,12 @@ void cpy_filename2args(char *name,char **args,int args_ctr)
 	args[i]=name;
 }
 
+
+
 uint64_t syscall_exec(gpr_t *reg)
 {
+	//exectr++;
+	
 	
 	char *file_name=(char *)reg->rdi;
 	char **args=(char **)reg->rsi;
@@ -508,6 +538,9 @@ uint64_t syscall_exec(gpr_t *reg)
 	create_new_process(i,NEW);
 	
 	child=&all_pro[i];
+	kprintf("new execvpe sno: %d\n",child->sno);
+	//if(exectr==2)
+		//while(1);
 	child->state=1;
 	child->ppid=active->pid;
 	change_ptable(child->cr3);//page table changed to new process PML4
@@ -1018,6 +1051,7 @@ void syscall_init()
 	p[3] = k_close;
 	p[9] = k_mmap;
 	p[11] = k_munmap;
+	p[56] = syscall_time;
 	p[57] = syscall_fork;
 	p[58] = syscall_switch;
 	p[59] = syscall_exec;
