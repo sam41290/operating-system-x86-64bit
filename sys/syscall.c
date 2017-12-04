@@ -129,7 +129,7 @@ uint64_t temporary_printf(gpr_t *reg)
 void kill_proc()
 {
 	//kprintf("in exit\n");
-	all_pro[active->sno].state=0;
+	all_pro[active->sno].state=5;
 	proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
 	vma *last_vma=(active->mmstruct).vma_list;
@@ -260,7 +260,7 @@ uint64_t syscall_switch(gpr_t *reg)
 uint64_t syscall_exit(gpr_t *reg)
 {
 	//kprintf("in exit\n");
-	all_pro[active->sno].state=0;
+	all_pro[active->sno].state=5;
 	proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
 	vma *last_vma=(active->mmstruct).vma_list;

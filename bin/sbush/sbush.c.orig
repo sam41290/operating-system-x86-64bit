@@ -483,6 +483,8 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 
 	 //TESTEXIT();
+<<<<<<< HEAD
+=======
 	 
 	 TESTEXECVPE();
 	 
@@ -505,6 +507,7 @@ int main(int argc, char *argv[], char *envp[]) {
 	//execvpe: variable passing and path passing test pending
 	
 	//TESTVFS();
+>>>>>>> ee5123fe7fd6dbe9fe7d6f23e94c7dfe1c6e2067
 
 	// for (int i = 0; i < 2; ++i)
 	// {

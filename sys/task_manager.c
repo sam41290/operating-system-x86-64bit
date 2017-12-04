@@ -50,7 +50,7 @@ uint8_t parent_stack[4096];
 void copy_parent_stack()
 {
 	uint8_t *parent_stackbase=(uint8_t *)active->u_stackbase;
-	for (int i=0;i<4096;i++)
+	for (int i=0;i<(4096);i++)
 	{
 		parent_stack[i]=*(parent_stackbase - i);
 	}
@@ -59,21 +59,30 @@ void copy_parent_stack()
 PCB *get_nextproc()
 {
 	//kprintf("proc start:%d\n",proc_start);
-	if(proc_start==proc_end)
+	
+	PCB *temp;
+	
+	while(1)
 	{
-		kprintf("0 process in the queue\n");
-		return NULL;
+		if(proc_start==proc_end)
+		{
+			kprintf("0 process in the queue\n");
+			return NULL;
+		}
+		temp=all_pro + proc_Q[proc_start];
+		proc_start=(proc_start + 1)%101;
+		if(temp->state!=5)
+			break;
 	}
-	PCB *temp=all_pro + proc_Q[proc_start];
 	//kprintf("from get next new kstack:%p new:%p\n",(temp)->k_stack,(temp)->u_stack);
-	proc_start=(proc_start + 1)%101;
+	
 	return temp;
 }
 
 void init_stack(PCB *proc)
 {
 	int i;
-	uint64_t top=(ustacktop -(4096 * proc->sno)) & 0xFFFFFFFFFFFFF000;
+	uint64_t top=(ustacktop -(4096 * 2 * proc->sno)) & 0xFFFFFFFFFFFFF000;
 
 	
 	if(proc->pid==0)
@@ -374,7 +383,7 @@ void init_kstack()
 {
 	//kprintf("\nhere\n");
 	kstackbase=(uint64_t)((kern_VA + 4096) & 0xFFFFFFFFFFFFF000);
-	kern_VA = kern_VA + (4096 * 101);
+	kern_VA = kern_VA + (4096 *2* 101);
 	//kprintf("\nhere\n");
 	//while(1);
 }
@@ -383,7 +392,7 @@ void create_kstack(PCB *proc)
 {
 	int i;
 	//kstackdescriptor[proc->pid]=0;
-	uint64_t top=kstackbase + (4096 * proc->sno);
+	uint64_t top=kstackbase + (4096 * 2 * proc->sno);
 	//kprintf("\nfrom init top: %p\n",top);
 	for(i=0;i<=4096;i++)
 	{
