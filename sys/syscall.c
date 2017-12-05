@@ -18,6 +18,13 @@
 #define WAITING_TO_LIVE 1
 #define WAITING_TO_DIE 2
 
+#define NEW_PROC 0
+#define RUNNING 1
+#define ZOMBIE 2
+#define DEAD 5
+
+
+
 uint64_t (*p[200])(gpr_t *reg);
 
 extern PCB *active;
@@ -31,6 +38,15 @@ extern struct terminal terminal_for_keyboard;
 extern uint64_t RING_0_MODE;
 
 extern int time_in_sec;
+
+struct proc_lst
+{
+	uint64_t pid;
+	uint64_t ppid;
+	uint64_t state;
+	uint64_t waitstate;
+	char name[1024];
+};
 
 int exectr=0;
 
@@ -136,8 +152,8 @@ uint64_t temporary_printf(gpr_t *reg)
 void kill_proc()
 {
 	//kprintf("in exit\n");
-	all_pro[active->sno].state=5;
-	proc_descriptor[active->sno]=0;
+	all_pro[active->sno].state=ZOMBIE;
+	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
 	vma *last_vma=(active->mmstruct).vma_list;
 	while(last_vma != NULL)
@@ -286,8 +302,8 @@ uint64_t syscall_switch(gpr_t *reg)
 uint64_t syscall_exit(gpr_t *reg)
 {
 	//kprintf("in exit\n");
-	all_pro[active->sno].state=5;
-	proc_descriptor[active->sno]=0;
+	all_pro[active->sno].state=ZOMBIE;
+	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
 	vma *last_vma=(active->mmstruct).vma_list;
 	while(last_vma != NULL)
@@ -348,6 +364,9 @@ int check_live_child(int child_id)
 	return 0;
 }
 
+
+
+
 uint64_t syscall_wait(gpr_t *reg)
 {
 	//kprintf("wait called %d\n",reg->rdi);
@@ -371,6 +390,15 @@ uint64_t syscall_wait(gpr_t *reg)
 		//while(1);
 	}
 	//kprintf("wait complete\n");
+	int i;
+	for(i=0; i<PROC_SIZE; i++)
+	{
+		if(all_pro[i].pid==active->signalling_child)
+			break;
+	}
+	all_pro[i].state=DEAD;
+	proc_descriptor[all_pro[i].sno]=0;
+	
 	active->k_stack=(uint64_t)reg;
 	active->u_stack=reg->usersp;
 	set_tss_rsp((void *)active->k_stack);
@@ -387,7 +415,7 @@ uint64_t syscall_wait(gpr_t *reg)
 
 //----------------------------EXECVPE--------------------------------------//
 
-char *Paths[200];
+char *Paths[1024];
 char abs_path[1024];
 
 int check_abs_path(char *file)
@@ -518,8 +546,11 @@ uint64_t syscall_exec(gpr_t *reg)
 	
 	//copy_args(args,(char **)cpy_args,args_ctr);
 	
-	char *cpy_path[path_ctr];
-	copy_args(path,cpy_path,path_ctr);
+	char cpy_path[path_ctr][1024];
+	//copy_args(path,cpy_path,path_ctr);
+	
+	for(int i=0;i<(path_ctr);i++)
+		strcpy(path[i],cpy_path[i],strlen(path[i]));
 	
 	//------------------------------------------------------------------------
 	
@@ -543,6 +574,7 @@ uint64_t syscall_exec(gpr_t *reg)
 		//while(1);
 	child->state=1;
 	child->ppid=active->pid;
+	copy_cur_dir(child);
 	change_ptable(child->cr3);//page table changed to new process PML4
 	
 	create_kstack(child);
@@ -604,6 +636,18 @@ uint64_t syscall_exec(gpr_t *reg)
 				break;
 			i++;
 		}
+		if(file_found==0)
+		{
+			concat_path(child->currentDir,file);
+			char *file_path=abs_path;
+			if(file_path[0]=='/')
+				file_path++;
+			file_found=scan_tarfs(child,file_path);
+			if(file_found)
+			{
+				strcpy(file_path,file_name,strlen(file_path));
+			}
+		}
 	}
 	
 	//---------------FILE search ends----------------------------------
@@ -628,7 +672,9 @@ uint64_t syscall_exec(gpr_t *reg)
 		
 	cpy_filename2args(file_name,args,args_ctr); //copies filename into args
 	
-	copy_args(cpy_path,path,path_ctr);	
+	
+	strcpy(file_name,child->name,strlen(file_name));
+	//copy_args(cpy_path,path,path_ctr);	
 	/*---------------Create VMA entries for the arguements------*/
 	
 	vma *new_vma=alloc_vma((uint64_t)args, (uint64_t)args + args_ctr);
@@ -739,10 +785,10 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->ppid=active->pid;
 	child->entry_point=active->entry_point;
 	child->heap_top =active->heap_top;
-	
+	strcpy(active->name,child->name,strlen(active->name));
 	(child->mmstruct).vma_list=NULL;
 	copy_vma(child);
-	
+	copy_cur_dir(child);
 	//while(1);
 	change_ptable(child->cr3);
 	
@@ -1042,15 +1088,87 @@ uint64_t k_getcwd(gpr_t *reg){
 	return (uint64_t)buff;
 }
 
+
+uint64_t syscall_get_proccount(gpr_t *reg)
+{
+	int ctr=0;
+	for(int i=0;i<PROC_SIZE;i++)
+	{
+		if(proc_descriptor[i]==1)
+			ctr++;
+	}
+	return ctr;
+}
+
+uint64_t syscall_get_proclist(gpr_t *reg)
+{
+	uint64_t addr=reg->rdi;
+	struct proc_lst *plist=(struct proc_lst *)addr;
+	int ctr=0;
+	for(int i=0;i<PROC_SIZE;i++)
+	{
+		if(proc_descriptor[i]==1)
+		{
+			plist[ctr].pid=all_pro[i].pid;
+			plist[ctr].ppid=all_pro[i].ppid;
+			plist[ctr].state=all_pro[i].state;
+			plist[ctr].waitstate=all_pro[i].waitstate;
+			strcpy(all_pro[i].name,plist[ctr].name,strlen(all_pro[i].name));
+			ctr++;
+		}
+	}
+	return 0;
+}
+
+
+uint64_t syscall_kill(gpr_t *reg)
+{
+	uint64_t pid=reg->rdi;
+	
+	int sno;
+	for(sno=0;sno <PROC_SIZE;sno++)
+	{
+		if(all_pro[sno].pid==pid)
+			break;
+	}
+	
+	all_pro[sno].state=DEAD;
+	proc_descriptor[active->sno]=0;
+	all_pro[sno].cr3=0;
+	vma *last_vma=((all_pro + sno)->mmstruct).vma_list;
+	while(last_vma != NULL)
+	{
+		remove_from_vma_list((all_pro + sno),last_vma->vstart, last_vma->vend);
+		last_vma = last_vma->nextvma;
+	
+	}
+	//kprintf("exit status: %d\n",reg->rdi);
+	uint64_t ppid=(all_pro + sno)->ppid;
+	for(int i=0;i<100;i++)
+	{
+		if(all_pro[i].pid==ppid)
+		{
+			
+			all_pro[i].sigchild_state=reg->rdi;
+			all_pro[i].signalling_child=active->pid;
+			break;
+		}
+	}
+	return 0;
+}
+
 void syscall_init()
 {
-	//kprintf("iiiiiioooo\n");
+	kprintf("iiiiiioooo\n");
 	p[0] = k_read;
 	p[1] = k_write;
 	p[2] = k_open;
 	p[3] = k_close;
 	p[9] = k_mmap;
 	p[11] = k_munmap;
+	p[53] = syscall_kill;
+	p[54] = syscall_get_proccount;
+	p[55] = syscall_get_proclist;
 	p[56] = syscall_time;
 	p[57] = syscall_fork;
 	p[58] = syscall_switch;

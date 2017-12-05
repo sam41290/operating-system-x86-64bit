@@ -41,6 +41,7 @@ struct pcb_t
 	uint64_t heap_top;
 	struct pcb_t *next;
 	char* currentDir;
+	char *name;
 };
 
 typedef struct pcb_t PCB;
@@ -64,6 +65,7 @@ void copy_vma(PCB *proc);
 void create_new_process(int proc_index,int new);
 void increment_childpg_ref(uint64_t vaddr_start,uint64_t vaddr_end);
 
+void copy_cur_dir(PCB *proc);
 void context1();
 
 void context2();

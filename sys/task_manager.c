@@ -7,45 +7,38 @@
 #include<sys/tarfs.h>
 #include<sys/kmalloc.h>
 #include<sys/defs.h>
+#include<sys/kstring.h>
 #define PROC_SIZE 100
 
 #define CHILD 0
 #define NEW 1
 
+#define NEW_PROC 0
+#define RUNNING 1
+#define ZOMBIE 2
+#define DEAD 5
 
 extern uint64_t RING_0_MODE;
 int proc_start=0;
 int proc_end=0;
 
 PCB *active = NULL;
-
 uint64_t proc_Q[101];
-
 PCB all_pro[100];
-
 uint64_t kernbase;
-
 uint64_t upml4;
-
 uint64_t ustacktop;
-
 uint64_t u_heapboundary;
-
 uint64_t global_pid=0;
-
 extern int ctr;
-
 extern uint64_t kern_VA;
-
 extern uint8_t initial_stack[4096];
-
 uint64_t proc_descriptor[100];
-
 uint64_t kstackbase;
-
 uint64_t cow_page[512];
-
 uint8_t parent_stack[4096];
+
+
 
 void copy_parent_stack()
 {
@@ -73,9 +66,11 @@ PCB *get_nextproc()
 		temp=all_pro + proc_Q[proc_start];
 		proc_Q[proc_start]=-1;
 		proc_start=(proc_start + 1)%101;
-		if(proc_descriptor[temp->sno]==1)
+		if(proc_descriptor[temp->sno]==1 && (temp->state==RUNNING || temp->state==NEW_PROC))
 			break;
 	}
+	
+	
 	//kprintf("from get next new kstack:%p new:%p\n",(temp)->k_stack,(temp)->u_stack);
 	
 	return temp;
@@ -462,13 +457,26 @@ void create_new_process(int proc_index,int new){
 	(all_pro + proc_index)->currentDir=kmalloc(512*sizeof(char));	
 	(all_pro + proc_index)->currentDir[0] = '/';
 	(all_pro + proc_index)->currentDir[1] = '\0';
+	(all_pro + proc_index)->name=kmalloc(512*sizeof(char));
 	proc_descriptor[proc_index]=1;
+}
+
+void copy_cur_dir(PCB *proc)
+{
+	int i;
+	for(i=0;active->currentDir[i]!='\0';i++)
+	{
+		proc->currentDir[i]=active->currentDir[i];
+	}
+	proc->currentDir[i]='\0';
 }
 
 
 
 void init_proc()
 {
+	
+	kprintf("init proc started\n");
 	for(int i=0;i<100;i++)
 	{
 		proc_descriptor[i]=0;
@@ -487,6 +495,14 @@ void init_proc()
 	copy_kstack(all_pro + proc_index);
 	
 	char shell[]="bin/sbush";
+	
+	int i;
+	
+	kprintf("length %d\n",strlen(shell));
+	
+	for(i=0;i<strlen(shell);i++)
+		(all_pro+proc_index)->name[i]=shell[i];
+	(all_pro+proc_index)->name[i]='\0';
 	
 	scan_tarfs(all_pro + proc_index,shell);
 	//while(1);

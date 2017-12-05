@@ -56,10 +56,15 @@ uint64_t kernend=(uint64_t)physfree + 4096 * 280;
 
 map_kernpt((uint64_t)&kernmem,(uint64_t)physbase,(uint64_t)physfree,(uint64_t)kernend);
 
+kprintf("kernpt mapped\n");
+
 syscall_init();
 
 
+
 init_tarfs();
+
+
 
 init_proc();
 
