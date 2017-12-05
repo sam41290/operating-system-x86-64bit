@@ -77,11 +77,6 @@ void InsertIntoRoot(char* path, uint64_t start, uint64_t end, int type)
 
 		// kfree((uint64_t)token, strlen(token));
     	token = mystrtok(path, '/', &pos); 	
-  
-		if (token == NULL)
-		 {
-		 	break;
-		 } 
   	 
 	}
 
