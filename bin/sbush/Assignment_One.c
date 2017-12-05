@@ -397,7 +397,7 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	}
 
 	LOGG("Not match");
-	return -1;
+	return 0;
 
 }
 

@@ -492,20 +492,20 @@ int main_test(int argc, char *argv[], char *envp[]) {
 	 
 	 //TESTEXIT();
 	 
-	 // TESTEXECVPE(1);
-	 // //
-	 // printf("back from execvpe\n");
-	 // //
-	 // TESTEXECVPE(2);
-	 // //
-	 // TESTEXECVPE(2);
-	 
-	 // TESTEXECVPE(2);
-	 // //
-	 // TESTEXECVPE(2);
-	 // //
-	 // TESTWAIT();
-	 //printf("abcd 1234\n");
+	   TESTEXECVPE(1);
+	   //
+	   printf("back from execvpe\n");
+	   //
+	   TESTEXECVPE(2);
+	   //
+	   TESTEXECVPE(2);
+	  
+	   TESTEXECVPE(2);
+	   //
+	   TESTEXECVPE(2);
+	   //
+	   TESTWAIT();
+	  printf("abcd 1234\n");
 
 	// TESTWAIT();
 	 

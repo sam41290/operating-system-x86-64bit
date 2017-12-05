@@ -34,6 +34,10 @@ extern inode* root_inode;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
+	
+
+	//physfree=physfree + 4096 * 10;
+	
   struct smap_t {
     uint64_t base, length;
     uint32_t type;
