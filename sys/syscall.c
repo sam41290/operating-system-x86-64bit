@@ -659,7 +659,7 @@ uint64_t syscall_exec(gpr_t *reg)
 		
 	cpy_filename2args(file_name,args,args_ctr); //copies filename into args
 	
-	//strcpy(file_name,child->name,strlen(file_name));
+	strcpy(file_name,child->name,strlen(file_name));
 	//copy_args(cpy_path,path,path_ctr);	
 	/*---------------Create VMA entries for the arguements------*/
 	
@@ -773,7 +773,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->entry_point=active->entry_point;
 	child->heap_top =active->heap_top;
 	copy_cur_dir(child);
-	//copy_name(child,active->name);
+	copy_name(child,active->name);
 
 	
 	
@@ -1108,7 +1108,7 @@ uint64_t syscall_get_proclist(gpr_t *reg)
 			plist[ctr].ppid=all_pro[i].ppid;
 			plist[ctr].state=all_pro[i].state;
 			plist[ctr].waitstate=all_pro[i].waitstate;
-			//strcpy(all_pro[i].name,plist[ctr].name,strlen(all_pro[i].name));
+			strcpy(all_pro[i].name,plist[ctr].name,strlen(all_pro[i].name));
 			ctr++;
 		}
 	}
@@ -1128,7 +1128,7 @@ uint64_t syscall_kill(gpr_t *reg)
 	}
 	
 	all_pro[sno].state=DEAD;
-	proc_descriptor[active->sno]=0;
+	proc_descriptor[sno]=0;
 	all_pro[sno].cr3=0;
 	vma *last_vma=((all_pro + sno)->mmstruct).vma_list;
 	while(last_vma != NULL)
@@ -1144,8 +1144,8 @@ uint64_t syscall_kill(gpr_t *reg)
 		if(all_pro[i].pid==ppid)
 		{
 			
-			all_pro[i].sigchild_state=reg->rdi;
-			all_pro[i].signalling_child=active->pid;
+			all_pro[i].sigchild_state=0;
+			all_pro[i].signalling_child=(all_pro + sno)->pid;
 			break;
 		}
 	}

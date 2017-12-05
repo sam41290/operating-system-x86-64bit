@@ -461,7 +461,7 @@ void create_new_process(int proc_index,int new){
 	(all_pro + proc_index)->currentDir=kmalloc(512*sizeof(char));	
 	(all_pro + proc_index)->currentDir[0] = '/';
 	(all_pro + proc_index)->currentDir[1] = '\0';
-	//(all_pro + proc_index)->name=kmalloc(512*sizeof(char));
+	(all_pro + proc_index)->name=kmalloc(512*sizeof(char));
 	proc_descriptor[proc_index]=1;
 }
 
@@ -474,7 +474,7 @@ void copy_cur_dir(PCB *proc)
 	}
 	proc->currentDir[i]='\0';
 }
-/*
+
 void copy_name(PCB *proc,char *str)
 {
 	int i;
@@ -485,7 +485,7 @@ void copy_name(PCB *proc,char *str)
 		(proc)->name[i]=str[i];
 	(proc)->name[i]='\0';
 }
-*/
+
 void init_proc()
 {
 	//all_pro=(PCB *)kmalloc(sizeof(PCB) * PROC_SIZE);
@@ -518,7 +518,7 @@ void init_proc()
 	
 	scan_tarfs(all_pro + proc_index,shell);
 	//while(1);
-	//copy_name(all_pro + proc_index,shell);
+	copy_name(all_pro + proc_index,shell);
 	proc_Q[proc_end]=(uint64_t)proc_index;
 	proc_end=proc_end + 1;
 	active=(all_pro + proc_index);

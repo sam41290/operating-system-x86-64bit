@@ -51,7 +51,7 @@ struct pcb_t
 	mm_struct mmstruct;
 	uint64_t* fd[MAX_FD]; 
 	uint64_t heap_top;
-	//char *name;
+	char *name;
 	char *currentDir;
 	struct pcb_t *next;
 }__attribute__((packed));
