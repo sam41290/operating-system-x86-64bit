@@ -318,7 +318,26 @@ int ExecuteCAT(char* path){
 	return 0;
 }
 
+int ExecuteEcho(char* data){
+	pid_t pid=fork();
+	 
+	if(pid==0)
+	{
+		//yield();
+		// printf("Abs Path %s\n", absPath);
+		char *myArgs[]={data,NULL,NULL};
 
+		execvpe("bin/echo",myArgs,NULL);
+	 //execvpe: variable passing and path passing test pending
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+	}
+
+	return 0;
+}
 
 int ExecuteBuiltIn(char** vector, int vecCount){
 
@@ -348,6 +367,10 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	{		
 		return ExecuteCAT(vector[1]);				//TODO Clean it
 	}
+	else if (0 == strncmp(cmd, "echo", 4))
+	{		
+		return ExecuteEcho(vector[1]);				//TODO Clean it
+	}
 	else if (0 == strncmp(cmd, "export", 6))
     {
     		LOGG("Export");
@@ -368,7 +391,9 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	}
 	else
 	{
-		return -1;
+		//We dont support anything other thatn built in commands
+		SHELL("We dont support anything other thatn built in commands\n");
+		return 0;
 	}
 
 	LOGG("Not match");
