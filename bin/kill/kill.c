@@ -30,8 +30,11 @@ int main(int argc,char *args[],char *envp[])
 	{
 		pid=string_to_int(args[i]);
 		
-		if(pid==0)
+		if(pid==1)
+		{
+			printf("Kill pid %d: permission denied\n",pid);
 			continue;
+		}
 		
 		unsigned long syscallnumber = 53;
 			

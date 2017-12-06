@@ -1149,6 +1149,25 @@ uint64_t syscall_kill(gpr_t *reg)
 			break;
 		}
 	}
+	
+	/*If the process being killed is active, remove it from schedule queue*/
+	
+	for(int i=0;i<(PROC_SIZE + 1);i++)
+	{
+		if(i==sno)
+		{
+			while(i!=proc_start)
+			{
+				proc_Q[i]=proc_Q[i-1];
+				i--;
+				if(i==0 && i!=proc_start)
+					i=PROC_SIZE;
+			}
+			proc_start=(proc_start + 1)%(PROC_SIZE + 1);
+			break;
+		}
+	}
+	
 	return 0;
 }
 

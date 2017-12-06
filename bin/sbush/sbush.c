@@ -511,7 +511,7 @@ struct try
 	int b;
 }__attribute__((packed));
 
-int main(int argc, char *argv[], char *envp[]) {
+int main_test(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
 
