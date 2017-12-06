@@ -37,6 +37,7 @@ struct dir_t{
 	inode* query_inode;
 	uint64_t currInode;
 	dirent currDirent;
+	struct dir_t* nextdir;
 };
 
 typedef struct dir_t dir;
@@ -45,5 +46,7 @@ typedef struct file_object_t file_object;
 void init_tarfs();
 void walkthough_inode(inode* node);
 inode* GetInode(char* path);
-
+void recycledirstruct(dir* nodeToRemove);
+dir* getdir_from_recylebin();
+dir* getnewdir();
 #endif

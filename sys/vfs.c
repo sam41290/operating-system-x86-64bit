@@ -10,6 +10,63 @@
 
 
 inode* root_inode;
+dir* dir_recycle_list = NULL;
+
+void recycledirstruct(dir* nodeToRemove){
+	nodeToRemove->nextdir = NULL;
+
+	if (dir_recycle_list == NULL)
+	{
+		dir_recycle_list = nodeToRemove;
+		#ifdef DEBUG_MALLOC
+		kprintf("Added dir to recycle\n");
+		#endif
+		return;
+	}
+
+	dir* last = dir_recycle_list;
+	while(last->nextdir != NULL)
+	{
+		last = last->nextdir;
+	}
+	last->nextdir = nodeToRemove;
+	#ifdef DEBUG_MALLOC
+	kprintf("Added dir to recycle\n");
+	#endif
+}
+
+dir* getdir_from_recylebin(){
+	if (dir_recycle_list == NULL)
+	{
+		return NULL;
+	}
+
+	dir* freedir = dir_recycle_list;
+	dir_recycle_list = dir_recycle_list->nextdir;
+
+	#ifdef DEBUG_MALLOC
+	kprintf("Reused dir\n");
+	#endif
+
+	return freedir;
+}
+
+dir* getnewdir(){
+	dir* new_dir = getdir_from_recylebin();
+	if (new_dir == NULL)
+	{
+		kprintf("Allocating new malloc dir\n");
+		new_dir = (dir*)kmalloc(sizeof(dir));
+	}
+
+	new_dir->currInode = -1;
+	new_dir->query_inode = NULL;
+	new_dir->currDirent.d_name[0] = '\0';
+	new_dir->nextdir = NULL;
+	// kprintf("Inside anon_vma %p %p\n",new_vma->vstart, new_vma->vend);
+	return new_dir;	
+}
+
 
 int findFamily(inode* node, char* token, uint64_t tokenLength){
 	for (int i = 1; i < node->familyCount; ++i)

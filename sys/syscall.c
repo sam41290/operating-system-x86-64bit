@@ -137,13 +137,17 @@ void kill_proc()
 	all_pro[active->sno].state=ZOMBIE;
 	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
+
 	vma *last_vma=(active->mmstruct).vma_list;
+	vma* next_vma;
 	while(last_vma != NULL)
 	{
+		next_vma = last_vma->nextvma;
 		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
-		last_vma = last_vma->nextvma;
-	
+		last_vma = next_vma;
 	}
+	(active->mmstruct).vma_list = NULL;
+
 	//kprintf("exit status: %d\n",reg->rdi);
 	uint64_t ppid=active->ppid;
 	for(int i=0;i<PROC_SIZE;i++)
@@ -295,13 +299,17 @@ uint64_t syscall_exit(gpr_t *reg)
 	all_pro[active->sno].state=ZOMBIE;
 	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
+
 	vma *last_vma=(active->mmstruct).vma_list;
+	vma* next_vma;
 	while(last_vma != NULL)
 	{
+		next_vma = last_vma->nextvma;
 		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
-		last_vma = last_vma->nextvma;
-	
+		last_vma = next_vma;
 	}
+	(active->mmstruct).vma_list = NULL;
+	
 	//kprintf("exit status: %d\n",reg->rdi);
 	uint64_t ppid=active->ppid;
 	for(int i=0;i<PROC_SIZE;i++)
@@ -957,7 +965,8 @@ uint64_t k_opendir(gpr_t *reg){
 	char* path = (char*) reg->rdi;
 	// kprintf("Path recieved by opendir %s", path);
 	
-	dir* dirobj = (dir*)kmalloc(sizeof(dir));		//Figure out how to free it
+	// dir* dirobj = (dir*)kmalloc(sizeof(dir));		//Figure out how to free it
+	dir* dirobj = getnewdir();
 	inode* query = GetInode(path);
 	dirobj->query_inode = query;
 	dirobj->currInode = 1;
@@ -969,6 +978,7 @@ uint64_t k_closedir(gpr_t *reg){
 	dir* dirobj = (dir*)reg->rdi;
 	dirobj->query_inode = NULL;
 	dirobj->currInode = -1;
+	recycledirstruct(dirobj);
 	return 1;
 }
 
