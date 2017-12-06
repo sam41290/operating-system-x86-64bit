@@ -71,9 +71,6 @@ void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t ke
 	
 	kernelpage[p4_index + j]=((uint64_t)cur_disp & 0xFFFFFFFFFF000) | 7;
 	
-	kprintf("changing cr3 123\n");
-
-	
 	// blankpage();
 	__asm__(
 	"movq %0,%%rax;\n"
@@ -81,9 +78,6 @@ void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t ke
 	:
 	:"g"(cr3)
 	);
-	
-	kprintf("kernpt mapped 123\n");
-	
 	(video)=(char *)(((uint64_t)kernmem + 4096 * j) | ((uint64_t)video & 0xfff));
 	
 	(videostart)=(char *)((uint64_t)kernmem + 4096 * j);
@@ -94,8 +88,6 @@ void map_kernpt(uint64_t kernmem,uint64_t physbase,uint64_t physfree,uint64_t ke
 	kernbase=(uint64_t)kernmem ;
 	upml4=kernbase - 4096;
 	ustacktop=upml4 -(4096 * 4096);
-	
-	
 	
 	return;
 }

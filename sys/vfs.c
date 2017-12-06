@@ -12,7 +12,7 @@
 inode* root_inode;
 
 int findFamily(inode* node, char* token, uint64_t tokenLength){
-	for (int i = 1; i <= node->familyCount; ++i)
+	for (int i = 1; i < node->familyCount; ++i)
 	{
 		if (0 == strncmp(node->family[i]->inodeName, token, tokenLength))
 		{
@@ -56,7 +56,9 @@ void InsertIntoRoot(char* path, uint64_t start, uint64_t end, int type)
     inode* node = root_inode;
 
 	while(token != NULL){
+	
 		int familymember = findFamily(node, token, strlen(token));
+
 		if ((familymember == 0))
 		{
 			// kprintf("could not find member %s\n", token);
@@ -74,9 +76,11 @@ void InsertIntoRoot(char* path, uint64_t start, uint64_t end, int type)
 		// kprintf("token : %s - ", token);
 
 		// kfree((uint64_t)token, strlen(token));
-    	token = mystrtok(path, '/', &pos);
+    	token = mystrtok(path, '/', &pos); 	
+  	 
 	}
-	kprintf("\n");
+
+	// kprintf("\n");
 }
 
 void init_tarfs(){
@@ -99,7 +103,7 @@ void init_tarfs(){
     	if ((strlen(header->name) > 0) && (header->size[0]!='\0'))
     	{
 	   		// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, datEnd-dataStart);
-    		if (strncmp(header->name, "lib/", 4) != 0)	//Dont parse libc folder. Some bug in printf
+    		if (strncmp(header->name, "lib/", 4) != 0 && strncmp(header->name, "bin/", 4) != 0)	//Dont parse libc folder. Some bug in printf
     		{
 	    		if (header->typeflag[0] == '0')
 	    		{
@@ -113,7 +117,9 @@ void init_tarfs(){
 	   			}
    			}
     	}
-    	
+
+    	// kprintf("Tinsert root done\n");
+
 		if((size % sizeof(struct posix_header_ustar))==0)
 		{
 			header= header + 1 + (int)(size/sizeof(struct posix_header_ustar));
@@ -132,8 +138,10 @@ inode* GetInode(char* path){
     char *token = mystrtok(path, '/', &pos);
     inode* node = root_inode;
 
+
 	while(token != NULL){
 		int familymember = findFamily(node, token, strlen(token));
+
 		if ((familymember == 0))
 		{
 			// kprintf("could not find member %s\n", token);

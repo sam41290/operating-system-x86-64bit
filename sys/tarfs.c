@@ -126,7 +126,7 @@ void read_elf(char *elfaddr,PCB *proc)
 		// kprintf("ptype : %d %d %d %d \n", (uint64_t)p->p_type[0],(uint64_t)p->p_type[1],(uint64_t)p->p_type[2],(uint64_t)p->p_type[3]);
 		//Create vma for the segments
 		
-		kprintf("vaddr %p\n", vaddr);
+		//kprintf("vaddr %p\n", vaddr);
 		vma* seg_vma = alloc_vma(vaddr, vaddr+memsz);
 		// kprintf("seg_vma [%d - %d]\n", seg_vma->vstart, seg_vma->vend);
 		append_to_vma_list(proc, seg_vma);

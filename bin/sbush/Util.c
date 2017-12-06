@@ -112,7 +112,7 @@ int ValidString(char* line){
                 empty++;
             }
         }
-        return (empty < strlen(line)-1);
+        return (empty <= strlen(line)-1);
     }
     return 0;
 }

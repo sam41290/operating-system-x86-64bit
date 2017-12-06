@@ -34,6 +34,10 @@ extern inode* root_inode;
 
 void start(uint32_t *modulep, void *physbase, void *physfree)
 {
+	
+
+	//physfree=physfree + 4096 * 10;
+	
   struct smap_t {
     uint64_t base, length;
     uint32_t type;
@@ -42,7 +46,7 @@ void start(uint32_t *modulep, void *physbase, void *physfree)
 
 
 
-uint64_t kernend=(uint64_t)physfree + 4096 * 280;
+uint64_t kernend=(uint64_t)physfree + 4096 * 10;
 
  for(smap = (struct smap_t*)(modulep+2); smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); ++smap) {
     if (smap->type == 1 /* memory */ && smap->length != 0) {
@@ -56,15 +60,10 @@ uint64_t kernend=(uint64_t)physfree + 4096 * 280;
 
 map_kernpt((uint64_t)&kernmem,(uint64_t)physbase,(uint64_t)physfree,(uint64_t)kernend);
 
-kprintf("kernpt mapped\n");
-
 syscall_init();
 
 
-
 init_tarfs();
-
-
 
 init_proc();
 

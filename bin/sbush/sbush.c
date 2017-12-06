@@ -471,37 +471,47 @@ void TESTCHDIR(){
 
 }
 
+void test_ps()
+{
+	pid_t pid=fork();
+	if(pid==0)
+	{
+		printf("I am the child!!!\n");
+		exit(0);
+	}
+	pid_t pid2=fork();
+	if(pid2==0)
+	{
+		execvpe("/bin/ps",NULL,NULL);
+	}
+	if(pid2>0)
+	{
+		int status;
+		waitpid(pid2,&status,0);
+		//execvpe(kill,pid,NULL);
+	}
+	pid_t pid3=fork();
+	if(pid3==0)
+	{
+		
+		char *myargs[]={"2",NULL};
+		execvpe("/bin/kill",myargs,NULL);
+	}
+	pid_t pid4=fork();
+	if(pid4==0)
+	{
+		execvpe("/bin/ps",NULL,NULL);
+	}
+	
+}
+
 struct try
 {
 	int a;
 	int b;
 }__attribute__((packed));
 
-
-void test_ps()
-{
-	pid_t pid=fork();
-	if(pid==0)
-	{
-		printf("testing PS. I am the child!!!\n");
-		exit(0);
-	}
-	pid_t pid2=fork();
-	if(pid2==0)
-	{
-		yield();
-		execvpe("/bin/ps",NULL,NULL);
-	}
-	if(pid2 > 0)
-	{
-		int status;
-		waitpid(pid2,&status,0);
-	}
-	return;
-}
-
-
-int main(int argc, char *argv[], char *envp[]) {
+int main_test(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
 
@@ -516,24 +526,24 @@ int main(int argc, char *argv[], char *envp[]) {
 	 
 	 //TESTEXIT();
 	 
-	 //TESTEXECVPE(1);
-	 ////
-	 //printf("back from execvpe\n");
-	 ////
-	 //TESTEXECVPE(2);
-	 ////
-	 //TESTEXECVPE(2);
-	 //
-	 //TESTEXECVPE(2);
-	 ////
-	 //TESTEXECVPE(2);
-	 ////
-	 //TESTWAIT();
-	 //printf("abcd 1234\n");
-	 
-	 //test_ps();
+	   //TESTEXECVPE(1);
+	   ////
+	   //printf("back from execvpe\n");
+	   ////
+	   //TESTEXECVPE(2);
+	   ////
+	   //TESTEXECVPE(2);
+	   //
+	   //TESTEXECVPE(2);
+	   ////
+	   //TESTEXECVPE(2);
+	   ////
+	   //TESTWAIT();
+	   test_ps();
+	   
+	  printf("abcd 1234\n");
 
-	TESTWAIT();
+	// TESTWAIT();
 	 
 	  //TESTCONTEXTSWITCH();
 	 

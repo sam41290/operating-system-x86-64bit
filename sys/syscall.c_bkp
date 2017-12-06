@@ -11,17 +11,26 @@
 #include <sys/kmalloc.h>
 #include <sys/vfs.h>
 #include <sys/kstring.h>
+#define PROC_SIZE 100
+#define CHILD 0
+#define NEW 1
+
+#define WAITING_TO_LIVE 1
+#define WAITING_TO_DIE 2
+
+#define NEW_PROC 0
+#define RUNNING 1
+#define ZOMBIE 2
+#define DEAD 5
+
 
 
 uint64_t (*p[200])(gpr_t *reg);
 
 extern PCB *active;
-extern uint64_t proc_Q[PROC_SIZE + 1];
-extern PCB all_pro[PROC_SIZE];
-
-//extern PCB* all_pro;
-
-extern uint64_t proc_descriptor[PROC_SIZE];
+extern uint64_t proc_Q[101];
+extern PCB all_pro[100];
+extern uint64_t proc_descriptor[100];
 extern int proc_start;
 extern int proc_end;
 extern uint64_t global_pid;
@@ -29,6 +38,15 @@ extern struct terminal terminal_for_keyboard;
 extern uint64_t RING_0_MODE;
 
 extern int time_in_sec;
+
+struct proc_lst
+{
+	uint64_t pid;
+	uint64_t ppid;
+	uint64_t state;
+	uint64_t waitstate;
+	char name[1024];
+};
 
 int exectr=0;
 
@@ -146,7 +164,7 @@ void kill_proc()
 	}
 	//kprintf("exit status: %d\n",reg->rdi);
 	uint64_t ppid=active->ppid;
-	for(int i=0;i<PROC_SIZE;i++)
+	for(int i=0;i<100;i++)
 	{
 		if(all_pro[i].pid==ppid)
 		{
@@ -156,14 +174,6 @@ void kill_proc()
 			break;
 		}
 	}
-	int i;
-	for(i=0; i<PROC_SIZE; i++)
-	{
-		if(all_pro[i].pid==active->signalling_child)
-			break;
-	}
-	all_pro[i].state=DEAD;
-	proc_descriptor[all_pro[i].sno]=0;
 	active=NULL;
 	return;
 }
@@ -179,7 +189,7 @@ uint64_t syscall_switch(gpr_t *reg)
 		active->u_stack=reg->usersp;
 		active->state=1;
 		
-		proc_end=(proc_end + 1)%(PROC_SIZE + 1);
+		proc_end=(proc_end + 1)%101;
 	}
 	if(active->waitstate==1)
 	{
@@ -253,7 +263,7 @@ uint64_t syscall_switch(gpr_t *reg)
 			else
 			{
 				proc_Q[proc_end]=(uint64_t)active->sno;
-				proc_end=(proc_end + 1)%(PROC_SIZE + 1);
+				proc_end=(proc_end + 1)%101;
 				active=NULL;
 			}
 			
@@ -304,7 +314,7 @@ uint64_t syscall_exit(gpr_t *reg)
 	}
 	//kprintf("exit status: %d\n",reg->rdi);
 	uint64_t ppid=active->ppid;
-	for(int i=0;i<PROC_SIZE;i++)
+	for(int i=0;i<100;i++)
 	{
 		if(all_pro[i].pid==ppid)
 		{
@@ -333,7 +343,7 @@ void do_wait(gpr_t *reg)
 	active->u_stack=reg->usersp;
 	active->state=1;
 		
-	proc_end=(proc_end + 1)%(PROC_SIZE + 1);
+	proc_end=(proc_end + 1)%101;
 	
 	syscall_switch(reg);
 	//kprintf("aahhaa\n");
@@ -353,6 +363,9 @@ int check_live_child(int child_id)
 	//kprintf("no child present\n");
 	return 0;
 }
+
+
+
 
 uint64_t syscall_wait(gpr_t *reg)
 {
@@ -376,6 +389,7 @@ uint64_t syscall_wait(gpr_t *reg)
 		//if(ctr >= 4)
 		//while(1);
 	}
+	//kprintf("wait complete\n");
 	int i;
 	for(i=0; i<PROC_SIZE; i++)
 	{
@@ -384,14 +398,14 @@ uint64_t syscall_wait(gpr_t *reg)
 	}
 	all_pro[i].state=DEAD;
 	proc_descriptor[all_pro[i].sno]=0;
-	//kprintf("wait complete\n");
+	
 	active->k_stack=(uint64_t)reg;
 	active->u_stack=reg->usersp;
 	set_tss_rsp((void *)active->k_stack);
 	reg->rax=active->signalling_child;
 	
 	*((uint64_t *)reg->rsi)=active->sigchild_state;
-	active->sigchild_state=DEAD;
+	active->sigchild_state=5;
 	//kprintf("rsi: %p\n",reg->rsi);
 	//while(1);
 	return active->signalling_child;
@@ -401,7 +415,8 @@ uint64_t syscall_wait(gpr_t *reg)
 
 //----------------------------EXECVPE--------------------------------------//
 
-
+char *Paths[1024];
+char abs_path[1024];
 
 int check_abs_path(char *file)
 {
@@ -417,7 +432,7 @@ int check_abs_path(char *file)
 	return ret;
 }
 
-void split_path(char *path,char *Paths[])
+void split_path(char *path)
 {
 	
 	int ctr=0;
@@ -434,7 +449,7 @@ void split_path(char *path,char *Paths[])
 	//return Paths;
 	
 }
-void concat_path(char *str1,char *str2,char *abs_path)
+void concat_path(char *str1,char *str2)
 {
 	
 	int ctr=0;
@@ -542,7 +557,7 @@ uint64_t syscall_exec(gpr_t *reg)
 	//=========create a new process for execvpe binary======================
 	/* new process is created so that it doesnt interfere with the current processes address space*/
 	int i;
-	for(i=0;i<PROC_SIZE;i++)
+	for(i=0;i<100;i++)
 	{
 		if(proc_descriptor[i]==0)
 			break;
@@ -559,8 +574,9 @@ uint64_t syscall_exec(gpr_t *reg)
 		//while(1);
 	child->state=1;
 	child->ppid=active->pid;
-	change_ptable(child->cr3);//page table changed to new process PML4
 	copy_cur_dir(child);
+	change_ptable(child->cr3);//page table changed to new process PML4
+	
 	create_kstack(child);
 	//---------------------------------------------------------------------------
 	//store current process stack pointer. Incase execvpe fails, the stack will be restored and program will return safely
@@ -587,9 +603,6 @@ uint64_t syscall_exec(gpr_t *reg)
 	/*If absolute path provided, then search for the file in that path only, 
 	else search for the file in the paths provided in envps parameter*/
 	
-	char *Paths[200];
-	char abs_path[200];
-	
 	if(check_abs_path(file))
 	{
 		char *file_path=file;
@@ -605,10 +618,10 @@ uint64_t syscall_exec(gpr_t *reg)
 		while(cpy_path!=NULL && cpy_path[i]!=NULL)
 		{
 			char *p=cpy_path[i];
-			split_path(p,Paths);
+			split_path(p);
 			for(int j=0;Paths[j]!=NULL;j++)
 			{
-				concat_path(Paths[j],file,abs_path);
+				concat_path(Paths[j],file);
 				char *file_path=abs_path;
 				if(file_path[0]=='/')
 					file_path++;
@@ -625,7 +638,7 @@ uint64_t syscall_exec(gpr_t *reg)
 		}
 		if(file_found==0)
 		{
-			concat_path(child->currentDir,file,abs_path);
+			concat_path(child->currentDir,file);
 			char *file_path=abs_path;
 			if(file_path[0]=='/')
 				file_path++;
@@ -658,6 +671,7 @@ uint64_t syscall_exec(gpr_t *reg)
 		strcpy(cpy_args[i],args[i],strlen(cpy_args[i]));
 		
 	cpy_filename2args(file_name,args,args_ctr); //copies filename into args
+	
 	
 	strcpy(file_name,child->name,strlen(file_name));
 	//copy_args(cpy_path,path,path_ctr);	
@@ -695,10 +709,9 @@ uint64_t syscall_exec(gpr_t *reg)
 	//kprintf("active rip: %p child rip: %p\n",new_rg->rip,child_rg->rip);
 	
 	active->waitstate=WAITING_TO_DIE;
-	//active->state=ZOMBIE;
 	active->waitingfor=child->pid;
 	proc_Q[proc_end]=(uint64_t)active->sno;
-	proc_end=(proc_end + 1)%(PROC_SIZE + 1);
+	proc_end=(proc_end + 1)%101;
 	
 	active=child;
 	
@@ -754,14 +767,14 @@ uint64_t syscall_fork(gpr_t *reg)
 	
 	//kprintf("parent entry point:%p\n",reg->rip);
 	
-	if((proc_end + 1) % (PROC_SIZE + 1)==proc_start)
+	if((proc_end + 1) % 101==proc_start)
 	{
 		kprintf("child can not be queued\n");
 		while(1);
 	}
 	PCB *child;
 	int i;
-	for(i=0;i<PROC_SIZE;i++)
+	for(i=0;i<100;i++)
 	{
 		if(proc_descriptor[i]==0)
 			break;
@@ -772,14 +785,14 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->ppid=active->pid;
 	child->entry_point=active->entry_point;
 	child->heap_top =active->heap_top;
-	copy_cur_dir(child);
-	copy_name(child,active->name);
+	strcpy(active->name,child->name,strlen(active->name));
 
-	
+	copy_cur_dir(child);
+
 	
 	(child->mmstruct).vma_list=NULL;
 	copy_vma(child);
-	
+	copy_cur_dir(child);
 	//while(1);
 	change_ptable(child->cr3);
 	
@@ -797,9 +810,8 @@ uint64_t syscall_fork(gpr_t *reg)
 	init_stack(child);
 	reg->rax=child->pid;
 	active->sigchild_state=child->state;
-	active->state=1;
 	proc_Q[proc_end]=(uint64_t)active->sno;
-	proc_end=(proc_end + 1)%(PROC_SIZE + 1);
+	proc_end=(proc_end + 1)%101;
 	//kprintf("parent kstack:%p ustack:%p\n",(proc_Q + proc_start)->k_stack,(proc_Q + proc_start)->u_stack);
 	//kprintf("parent sp val:%p sp:%p\n",*(uint64_t *)parent_rg->usersp,parent_rg->usersp);
 	
@@ -1084,6 +1096,7 @@ uint64_t k_getcwd(gpr_t *reg){
 	return (uint64_t)buff;
 }
 
+
 uint64_t syscall_get_proccount(gpr_t *reg)
 {
 	int ctr=0;
@@ -1128,7 +1141,7 @@ uint64_t syscall_kill(gpr_t *reg)
 	}
 	
 	all_pro[sno].state=DEAD;
-	proc_descriptor[sno]=0;
+	proc_descriptor[active->sno]=0;
 	all_pro[sno].cr3=0;
 	vma *last_vma=((all_pro + sno)->mmstruct).vma_list;
 	while(last_vma != NULL)
@@ -1144,30 +1157,11 @@ uint64_t syscall_kill(gpr_t *reg)
 		if(all_pro[i].pid==ppid)
 		{
 			
-			all_pro[i].sigchild_state=0;
-			all_pro[i].signalling_child=(all_pro + sno)->pid;
+			all_pro[i].sigchild_state=reg->rdi;
+			all_pro[i].signalling_child=active->pid;
 			break;
 		}
 	}
-	
-	/*If the process being killed is active, remove it from schedule queue*/
-	
-	for(int i=0;i<(PROC_SIZE + 1);i++)
-	{
-		if(i==sno)
-		{
-			while(i!=proc_start)
-			{
-				proc_Q[i]=proc_Q[i-1];
-				i--;
-				if(i==0 && i!=proc_start)
-					i=PROC_SIZE;
-			}
-			proc_start=(proc_start + 1)%(PROC_SIZE + 1);
-			break;
-		}
-	}
-	
 	return 0;
 }
 
@@ -1196,3 +1190,4 @@ void syscall_init()
 	p[80] = k_chdir;
 	p[99] = temporary_printf;
 }
+

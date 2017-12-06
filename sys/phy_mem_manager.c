@@ -20,7 +20,7 @@ static int head_freelist = 0;
 static int lastfreeblock = 0;
 static int currblock = 0;
 #define PAGE_SIZE 0x1000
-#define KERNBASE 0xFFFFFFFF80000000
+#define KERNBASE 0xFFFFFFFF80200000
 
 void printtotalFreeBlocks(){
 	kprintf("Total Free Blocks %d\n", totalblockcount);

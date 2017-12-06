@@ -267,15 +267,47 @@ int ExecuteLS(char* path){
 	return 0;
 }
 
+//Free the returned char* after use
+char* GetAbsolutePath(char* path){
+	char* absolutePath = (char*)malloc(1024*sizeof(char));
+	if (path[0] == '/')
+	{
+		for (int i = 0; path[i] != '\0'; ++i)
+		{
+			absolutePath[i] = path[i];
+		}
+	}
+	else
+	{
+		char* currDir = GetCurrentDir();
+		// printf("currDir %s\n", currDir);
+		int i = 0;
+		for (; currDir[i] != '\0'; ++i)
+		{
+			absolutePath[i] = currDir[i];		
+		}	
+		for (int j = 0; path[j] != '\0'; ++j)
+		{
+			absolutePath[i++] = path[j];
+		}
+		absolutePath[i] = '\0';
+	}
+	return absolutePath;
+}
 
-int ExecuteCAT(){
+int ExecuteCAT(char* path){
 	pid_t pid=fork();
 	 
 	if(pid==0)
 	{
 		//yield();
-		execvpe("bin/cat",NULL,NULL);
+		char* absPath = GetAbsolutePath(path);
+		// printf("Abs Path %s\n", absPath);
+		char *myArgs[]={absPath,NULL,NULL};
+
+		execvpe("bin/cat",myArgs,NULL);
 	 //execvpe: variable passing and path passing test pending
+		free(absPath);
 	}
 	if(pid > 0)
 	{
@@ -286,7 +318,26 @@ int ExecuteCAT(){
 	return 0;
 }
 
+int ExecuteEcho(char* data){
+	pid_t pid=fork();
+	 
+	if(pid==0)
+	{
+		//yield();
+		// printf("Abs Path %s\n", absPath);
+		char *myArgs[]={data,NULL,NULL};
 
+		execvpe("bin/echo",myArgs,NULL);
+	 //execvpe: variable passing and path passing test pending
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+	}
+
+	return 0;
+}
 
 int ExecuteBuiltIn(char** vector, int vecCount){
 
@@ -313,8 +364,12 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 		return ExecuteLS(GetCurrentDir());
 	}
 	else if (0 == strncmp(cmd, "cat", 3))
-	{
-		return ExecuteCAT();				//TODO Clean it
+	{		
+		return ExecuteCAT(vector[1]);				//TODO Clean it
+	}
+	else if (0 == strncmp(cmd, "echo", 4))
+	{		
+		return ExecuteEcho(vector[1]);				//TODO Clean it
 	}
 	else if (0 == strncmp(cmd, "export", 6))
     {
@@ -336,11 +391,13 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	}
 	else
 	{
-		return -1;
+		//We dont support anything other thatn built in commands
+		SHELL("We dont support anything other thatn built in commands\n");
+		return 0;
 	}
 
 	LOGG("Not match");
-	return -1;
+	return 0;
 
 }
 
