@@ -40,8 +40,8 @@ void UpdateShellPrompt()
 	if (currDir != NULL)
 	{
 		SHELL("\n");
-		SHELL(currDir);
-		SHELL(" sbush> " );
+		SHELLCOLOR(currDir);
+		SHELLCOLOR(" sbush> " );
 	}
 }
 

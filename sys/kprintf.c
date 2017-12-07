@@ -80,7 +80,9 @@ void checkForScroll(){
 		for(char* temp = (char*)videostart; temp < (char*)videostart+160*12;){
 			*temp = *(temp+shift);
 			temp++;
-			*temp++ = 7;
+			// *temp++ = 7;
+			*temp = *(temp+shift);
+			temp++;
 		}		
 
 		//Clear Screen
@@ -163,7 +165,7 @@ void flushchar(const char ch)
 void flushcolor(const char* text)
 {
 	checkForScroll();
-   	int colour = 4;
+   	int colour = 3;
     while( *text != 0 && *text != '\n')
     {
         *video++ = *text++;
