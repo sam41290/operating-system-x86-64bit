@@ -11,7 +11,7 @@
 
 inode* root_inode;
 dir* dir_recycle_list = NULL;
-
+//Reuse the dir objects returned in opendir
 void recycledirstruct(dir* nodeToRemove){
 	nodeToRemove->nextdir = NULL;
 
@@ -142,6 +142,7 @@ void InsertIntoRoot(char* path, uint64_t start, uint64_t end, int type)
 
 void init_tarfs(){
 
+	//One time usage of malloc will never be freed
 	root_inode = (inode*)kmalloc(sizeof(inode));
 	root_inode->start = 0;
 	root_inode->end = 1;
@@ -160,11 +161,12 @@ void init_tarfs(){
     	if ((strlen(header->name) > 0) && (header->size[0]!='\0'))
     	{
 	   		// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, datEnd-dataStart);
-    		if (strncmp(header->name, "lib/", 4) != 0 && strncmp(header->name, "bin/", 4) != 0)	//Dont parse libc folder. Some bug in printf
+    		// if (strncmp(header->name, "lib/", 4) != 0 && strncmp(header->name, "bin/", 4) != 0)	//Dont parse libc folder. Some bug in printf
     		{
 	    		if (header->typeflag[0] == '0')
 	    		{
 	    			//File
+	    			// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, datEnd-dataStart);
 	    			InsertIntoRoot(header->name, dataStart, datEnd, FILE);
 	    		}
 	    		else if (header->typeflag[0] == '5')

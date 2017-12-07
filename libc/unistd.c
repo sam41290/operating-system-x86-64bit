@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+//Reference : https://filippo.io/linux-syscall-table/ + http://man7.org/linux/man-pages/man2/ + https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html
+
+
 unsigned int sleep(unsigned int seconds)
 {
 	unsigned long syscallnumber = 56;
@@ -216,38 +219,6 @@ int fclose(File *fp)
 }
 
 
-
-// int chdir(char *path)
-// {
-
-
-// char *buff=path;
-
-// unsigned long syscallnumber = 80;
-// int read_count;
-
-//   // write character to stdout
-
-// __asm__(
-// "movq %1, %%rax;\n"
-// "movq %2, %%rdi;\n"
-// "syscall;\n"
-// "movq %%rax, %0;\n"
-// : "=m" (read_count)
-// : "m" (syscallnumber), "m" (buff)
-// : "rax","rdi"
-// );
-
-
-// return read_count;
-
-// }
-
-
-
-
-
-//int ctr=0;
 
 int execvpe(const char *filename, char *const argv[], char *const envp[]){
 

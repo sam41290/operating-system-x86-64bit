@@ -633,14 +633,14 @@ int main_test(int argc, char *argv[], char *envp[]) {
 	
 	//TESTVFS();
 
-	for (int i = 0; i < 60; ++i)
-	{
+	// for (int i = 0; i < 60; ++i)
+	// {
 		// ExecuteCAT2("/Tryme/Piku.txt");
 		// TESTEXECVPE(i);
 		// ExecuteEcho2("Hi");
-		ExecuteLS2("/");
+		// ExecuteLS2("/");
 		// TESTVFS();
-	}
+	// }
 
 	// TESTVFS();
 

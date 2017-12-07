@@ -15,16 +15,16 @@ struct inode_t{
 	uint64_t start;     //Start address of the file data
 	uint64_t end;      //End address of the file data
 	struct inode_t* family[MAX_FAMILY];       //family 0 stores parent and rest all store child. We support max 9 children
-	int familyCount;
-	enum inodeType type;
-	char inodeName[NAME_MAX];
+	int familyCount;						//Total number of children including immediate parent
+	enum inodeType type;					//Whether it is directory or file
+	char inodeName[NAME_MAX];				//Name of the inode
 };
 
 typedef struct inode_t inode;
 
 struct file_object_t{
 	uint64_t currentoffset;     //Current offset in inode
-	struct inode_t* node;
+	struct inode_t* node;		
 };
 
 struct dirent_t {
