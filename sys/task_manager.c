@@ -380,7 +380,7 @@ void kernel_switch_to()
 }
 */
 
-void init_kstack()
+void init_kstack2()
 {
 	//kprintf("\nhere\n");
 	kstackbase=(uint64_t)((kern_VA + 4096) & 0xFFFFFFFFFFFFF000);
@@ -389,7 +389,7 @@ void init_kstack()
 	//while(1);
 }
 
-void create_kstack(PCB *proc)
+void create_kstack2(PCB *proc)
 {
 	int i;
 	//kstackdescriptor[proc->pid]=0;
@@ -404,6 +404,32 @@ void create_kstack(PCB *proc)
 	//kprintf("\nfrom init top: %p\n",top);
 	proc->k_stack=top;
 	proc->k_stackbase=top;
+}
+
+void init_kstack()
+{
+              //kprintf("\nhere\n");
+              kstackbase=(uint64_t)(0xFFFFFFFFFFFFF000 - (4096 *3* (PROC_SIZE + 1)));
+              //kern_VA = kstackbase + (4096 *2* (PROC_SIZE + 1));
+              //kprintf("\nhere\n");
+              //while(1);
+}
+ 
+void create_kstack(PCB *proc)
+{
+              int i;
+              //kstackdescriptor[proc->pid]=0;
+              uint64_t top=kstackbase + (4096 * 2 * (proc->sno));
+              //kprintf("\nfrom init top: %p\n",top);
+              for(i=0;i<4096 * 2;i++)
+              {
+                           *((uint8_t *)(top + i))=0;
+                           top++;
+              }
+             
+              // kprintf("\nfrom init top: %p\n",top);
+              proc->k_stack=top;
+              proc->k_stackbase=top;
 }
 
 void copy_kstack(PCB *proc)
@@ -458,10 +484,14 @@ void create_new_process(int proc_index,int new){
 	all_pro[proc_index].waitingfor=0;
 	all_pro[proc_index].signalling_child=0;
 	all_pro[proc_index].sigchild_state=5;
-	(all_pro + proc_index)->currentDir=kmalloc(512*sizeof(char));	
+	(all_pro + proc_index)->currentDir=kmalloc(100*sizeof(char));	
 	(all_pro + proc_index)->currentDir[0] = '/';
 	(all_pro + proc_index)->currentDir[1] = '\0';
-	(all_pro + proc_index)->name=kmalloc(512*sizeof(char));
+	(all_pro + proc_index)->name=kmalloc(100*sizeof(char));
+	for (int i = 0; i < MAX_FD; ++i)
+	{
+		(all_pro + proc_index)->fd[i] = NULL;
+	}
 	proc_descriptor[proc_index]=1;
 }
 

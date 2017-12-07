@@ -31,7 +31,7 @@ int Execute(char *cmd, char** vector, int vecCount)
 
                 //TODO commented this remove later
                 // path=getenv("PATH");
-                path = "";
+                path = "/Tryme";
 
 
                 LOGG( path);
@@ -75,6 +75,7 @@ int Execute(char *cmd, char** vector, int vecCount)
                                 {
                                         LOGG("Not NULL");
                                         LOGG( dir);
+                                        // puts("Fopen success");
                                         //Read first 18 chars to confirm it is sbush script "#!rootfs/bin/sbush"
                                         char compare[19]; int comp = 0;
                                         for (; comp < 18; ++comp)
@@ -93,7 +94,7 @@ int Execute(char *cmd, char** vector, int vecCount)
                                         compare[comp] = '\0';
 
 
-
+                                        // puts(compare);
                                         LOGG("compare %s\n");
 
 
@@ -104,33 +105,36 @@ int Execute(char *cmd, char** vector, int vecCount)
                                                 LOGG("strncmp match");
                                                 File *fp=fopen(dir,"r");
                                                 char c;
-                                                char cmd[1024];
+                                                char cmd[100];
                                                 int k=0;
                                                 c=fgetc(fp);
                                                 int t=0;
-                                                while(c!=EOF)
+                                                while(c!='\0')
                                                 {
                                                         if(c=='#'){t=1;}        //Ignore Comments
                                                         
                                                         if(c=='\n')
                                                         {
                                                                 cmd[k]='\0';
-
+                                                                puts("I am here--");puts(cmd);
                                                                 if(t==0 && k>0)
                                                                 {
                                                                         LOGG("executing command:%s\n");LOGG(cmd);
                                                                         int vecCount2;
                                                                         char** vector2 = SplitString(getargs(cmd), &vecCount2);
+                                                                        // puts("Execute cmd");puts(vector2[0]);
                                                                         Execute(cmd, vector2, vecCount2);//replace with correct function
                                                                 }
 
                                                                 k=0;t=0;
                                                         }
                                                         else if(t==0)
-                                                        {
+                                                        {         
+                                                                putchar(c);
                                                                 cmd[k++]=c;
                                                         }
                                                         c=fgetc(fp);
+                                                        // putchar(c);
                                                 }
                                                 fclose(fp);
                                                 return 1;

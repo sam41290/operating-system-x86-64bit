@@ -55,12 +55,12 @@ dir* getnewdir(){
 	dir* new_dir = getdir_from_recylebin();
 	if (new_dir == NULL)
 	{
-		kprintf("Allocating new malloc dir\n");
+		// kprintf("Allocating new malloc dir\n");
 		new_dir = (dir*)kmalloc(sizeof(dir));
 	}
 
 	new_dir->currInode = -1;
-	new_dir->query_inode = NULL;
+	new_dir->path[0] = '\0';
 	new_dir->currDirent.d_name[0] = '\0';
 	new_dir->nextdir = NULL;
 	// kprintf("Inside anon_vma %p %p\n",new_vma->vstart, new_vma->vend);

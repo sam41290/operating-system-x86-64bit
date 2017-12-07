@@ -37,13 +37,6 @@ struct pcb_t
 	uint64_t sno;
 	__volatile__ uint64_t pid;
 	__volatile__ uint64_t ppid;
-	uint64_t entry_point;
-	uint64_t u_stack;
-	uint64_t u_stackbase;
-	uint64_t k_stackbase;
-	uint64_t k_stack;
-	uint64_t state;
-	uint64_t cr3;
 	__volatile__ int waitstate;
 	__volatile__ int waitingfor;
 	__volatile__ uint64_t signalling_child;
@@ -53,6 +46,13 @@ struct pcb_t
 	uint64_t heap_top;
 	char *name;
 	char *currentDir;
+	uint64_t entry_point;
+	uint64_t u_stack;
+	uint64_t u_stackbase;
+	uint64_t k_stackbase;
+	uint64_t k_stack;
+	uint64_t state;
+	uint64_t cr3;
 	struct pcb_t *next;
 }__attribute__((packed));
 

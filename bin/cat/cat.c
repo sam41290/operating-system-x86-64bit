@@ -6,14 +6,14 @@
 int main(int argc, char *argv[], char *envp[]) 
 {
 	// printf("argc %d\n", argc);
-	if(argc > 2)
+	// if(argc > 2)
+	// {
+	// 	puts("Invalid number of arguements");
+	// 	return -1;
+	// }
+	// else if(argc==2)
 	{
-		puts("Invalid number of arguements");
-		return -1;
-	}
-	else if(argc==2)
-	{
-		// printf("cat got %s", argv[1]);
+		// printf("cat got %s", argv[0]);
 
 		File *fp=fopen(argv[1],"r");
 		if(fp==NULL)
@@ -24,12 +24,14 @@ int main(int argc, char *argv[], char *envp[])
 
 		char* buff = (char*) malloc(4096*sizeof(char));
 		int read_count = read(fp->fd, buff, 4096);
+		puts("\n");
 		for (int i = 0; i < read_count; ++i)
 		{
 			printf("%c", buff[i]);
 		}
 
 		free(buff);
+		free(fp);
 		
 		// char ch=fgetc(fp);
 		// while(ch!='\0')
@@ -38,20 +40,20 @@ int main(int argc, char *argv[], char *envp[])
 		// 	ch=fgetc(fp);
 		// }
 	}
-	else
-	{
-		char *str=(char*)malloc(sizeof(char)*1024);
-		//size_t t=0;
-			while(1)
-			{
-				gets(str);
-				if(strcmp(str,"^C")==0)
-					break;
-				puts(str);
+	// else
+	// {
+	// 	char *str=(char*)malloc(sizeof(char)*1024);
+	// 	//size_t t=0;
+	// 		while(1)
+	// 		{
+	// 			gets(str);
+	// 			if(strcmp(str,"^C")==0)
+	// 				break;
+	// 			puts(str);
 
-			}
+	// 		}
 
-	}
+	// }
 
 	return 0;
 

@@ -4,7 +4,7 @@
 #include <sys/defs.h>
 
 #define MAX_FAMILY 10	//Maximum children inside a floder
-#define NAME_MAX 1024	//Maximim length of a foldername
+#define NAME_MAX 255	//Maximim length of a foldername
 
 enum inodeType{
 	DIR=0,
@@ -34,7 +34,7 @@ struct dirent_t {
 typedef struct dirent_t dirent;
 
 struct dir_t{
-	inode* query_inode;
+	char path[NAME_MAX+1];
 	uint64_t currInode;
 	dirent currDirent;
 	struct dir_t* nextdir;

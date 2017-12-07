@@ -39,6 +39,7 @@ void UpdateShellPrompt()
 	char* currDir = GetCurrentDir();
 	if (currDir != NULL)
 	{
+		SHELL("\n");
 		SHELL(currDir);
 		SHELL(" sbush >" );
 	}
@@ -222,7 +223,7 @@ void ExecutePipe(command* cmd1, command* cmd2){
 
 
 int ExecuteBinary(char** vector, int vecCount){
-
+	return 1;
 	char* cmd;
 	// char* myArgs[4] ;
 
@@ -305,7 +306,7 @@ int ExecuteCAT(char* path){
 		// printf("Abs Path %s\n", absPath);
 		char *myArgs[]={absPath,NULL,NULL};
 
-		execvpe("bin/cat",myArgs,NULL);
+		execvpe("/bin/cat",myArgs,NULL);
 	 //execvpe: variable passing and path passing test pending
 		free(absPath);
 	}
@@ -340,7 +341,7 @@ int ExecuteEcho(char* data){
 }
 
 int ExecuteBuiltIn(char** vector, int vecCount){
-
+	// printf("Inside Builtin\n");
 	char* cmd;
 	// char* myArgs[4] ;
 
@@ -356,6 +357,7 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	LOGG("cmd");
 	if (0 == strncmp(cmd, "cd", 2))
 	{
+		// printf("Inside Change Dir\n");
 		return ChangeDirectory(vector[1]);				//TODO Clean it
 	}
 	else if (0 == strncmp(cmd, "ls", 2))
@@ -393,7 +395,7 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	{
 		//We dont support anything other thatn built in commands
 		SHELL("We dont support anything other thatn built in commands\n");
-		return 0;
+		return 1;
 	}
 
 	LOGG("Not match");
