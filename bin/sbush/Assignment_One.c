@@ -373,28 +373,28 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	{		
 		return ExecuteEcho(vector[1]);				//TODO Clean it
 	}
-	else if (0 == strncmp(cmd, "export", 6))
-    {
-    		LOGG("Export");
-            return ExportEnvVar(vector[1]);                              //TODO Clean it
-    }
-	else if (0 == strncmp(cmd, "exit", 4))
-	{
-		SHELL("Shutting Down!\n");
-		exit(1);
-	}
-	else if (CheckIfPipeCommand(vector, vecCount))
-	{
-		LOG("WHY AM AI COMING HERE\n");
-		command* cmd1 = malloc(sizeof(command)); command* cmd2 = malloc(sizeof(command));
-		ParsePipeCommand(cmd1, cmd2, vector, vecCount);
-		ExecutePipe(cmd1, cmd2);
-		return 0;
-	}
+	// else if (0 == strncmp(cmd, "export", 6))
+ //    {
+ //    		LOGG("Export");
+ //            return ExportEnvVar(vector[1]);                              //TODO Clean it
+ //    }
+	// else if (0 == strncmp(cmd, "exit", 4))
+	// {
+	// 	SHELL("Shutting Down!\n");
+	// 	exit(1);
+	// }
+	// else if (CheckIfPipeCommand(vector, vecCount))
+	// {
+	// 	LOG("WHY AM AI COMING HERE\n");
+	// 	command* cmd1 = malloc(sizeof(command)); command* cmd2 = malloc(sizeof(command));
+	// 	ParsePipeCommand(cmd1, cmd2, vector, vecCount);
+	// 	ExecutePipe(cmd1, cmd2);
+	// 	return 0;
+	// }
 	else
 	{
 		//We dont support anything other thatn built in commands
-		SHELL("We dont support anything other thatn built in commands\n");
+		// SHELL("We dont support anything other thatn built in commands\n");
 		return 1;
 	}
 
@@ -427,7 +427,7 @@ int RedirectCommand(char* input){
 
 	int ret = Execute(input, vector, vecCount);
 	if( ret == -1){
-		SHELL("Failed!\n");
+		SHELL("\nFailed!\n");
 	}
 	
 

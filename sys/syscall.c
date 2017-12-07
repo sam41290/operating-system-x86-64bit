@@ -1044,6 +1044,10 @@ uint64_t k_opendir(gpr_t *reg){
 	{
 		return (uint64_t)0;
 	}
+	if (query->type == FILE)
+	{
+		return (uint64_t)0;
+	}
 	int i = 0;
 	for (; path[i] != '\0'; ++i)
 	{
@@ -1105,9 +1109,15 @@ uint64_t k_chdir(gpr_t *reg){
 	char* newPath = NULL;
 	if (path[0] == '/')
 	{
-		if (NULL == GetInode(path))
+		inode* query = GetInode(path);
+		if (NULL == query)
 		{
 			// kprintf("Change dir request inode NULL%s\n", path);
+			return 0;
+		}
+		if (FILE == query->type)
+		{
+			//Reset newPath
 			return 0;
 		}
 		newPath = path;
@@ -1125,7 +1135,14 @@ uint64_t k_chdir(gpr_t *reg){
 		newPath[lastPos++] = '/';
 		newPath[lastPos] = '\0';
 
-		if (NULL == GetInode(newPath))
+		inode* query = GetInode(newPath);
+		if (NULL == query)
+		{
+			//Reset newPath
+			newPath[lastPos_bk] = '\0';
+			return 0;
+		}
+		if (FILE == query->type)
 		{
 			//Reset newPath
 			newPath[lastPos_bk] = '\0';
