@@ -940,7 +940,7 @@ uint64_t k_open(gpr_t *reg){
 
 	if (query == NULL || (query != NULL && query->type == DIR))
 	{
-		kprintf("Returning to good world error!\n");
+		kprintf("\nNo Such File!\n");
 		return -1;
 	}
 
@@ -957,7 +957,7 @@ uint64_t k_open(gpr_t *reg){
 			return i;
 		}
 	}
-	kprintf("Returning to good world error!\n");
+	kprintf("\nWe dont support opening more than 20 files!\n");
 	return -1;
 }
 

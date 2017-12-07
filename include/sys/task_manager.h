@@ -3,7 +3,7 @@
 #ifndef _PROC_H
 #define _PROC_H
 
-#define MAX_FD 10
+#define MAX_FD 20
 
 #define PROC_SIZE 100
 #define CHILD 0

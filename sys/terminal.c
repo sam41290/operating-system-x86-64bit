@@ -75,8 +75,7 @@ void tunnel(struct terminal* self){
 			return;
 		}
 
-		//Local Echo
-		LocalEcho(c);
+
 		
 		if (self->stdinlength >= 1022)
 		{
@@ -84,6 +83,13 @@ void tunnel(struct terminal* self){
 			self->stdin[self->stdinlength] = '\0';
 			READMODEON = 0;
 		}
+		else if (self->stdinlength == 0 && c == '-')
+		{
+			return;
+		}
+
+		//Local Echo
+		LocalEcho(c);
 
 		if (c == '\n')
 		{
