@@ -15,6 +15,9 @@ void COMMON_Print(char *format, ...);
 
 #define SHELL(fmt) shputs(fmt);
 
+#define SHELLCOLOR(fmt) shputscolor(fmt);
+
+
 #define LOGG(fmt)\
         do { if (DEBUG) puts(fmt);	\
     		} while (0)
@@ -62,6 +65,7 @@ struct envVar** getAllEnvironmentVaiables(int*);
 void print(struct envVar** allVariables, int count);
 char* mystrtok(char *str, const char delim, int* pos);
 int shputs(const char *s);
+int shputscolor(const char *s);
 
 //For Async Process
 struct BackgroundChildStruct {

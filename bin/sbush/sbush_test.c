@@ -6,6 +6,7 @@
 
 int main(int argc, char *argv[], char *envp[]) {
 
+	SHELLCOLOR("         USE '-'(minus) for backspace\n");
 
 	UpdateShellPrompt();
 

@@ -14,4 +14,7 @@ void flushchar(const char ch);
 void flushbackspace();
 void blankpage();
 void resetdatawritten();
+void flushcharcolor(const char ch);
+void flushcolor(const char* text);
+
 #endif

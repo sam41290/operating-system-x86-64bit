@@ -41,7 +41,7 @@ void UpdateShellPrompt()
 	{
 		SHELL("\n");
 		SHELL(currDir);
-		SHELL(" sbush >" );
+		SHELL(" sbush> " );
 	}
 }
 

@@ -19,6 +19,13 @@ int shputs(const char *s)
   return 0;
 }
 
+int shputscolor(const char *s)
+{
+  for( ; *s; ++s) if (putcharcolor(*s) != *s) return EOF;
+  return 0;
+}
+
+
 int CheckIfPipeCommand(char** vector, int vecCount){
     // Currently we support only 1 pipe
 

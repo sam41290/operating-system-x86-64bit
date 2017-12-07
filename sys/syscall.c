@@ -1033,6 +1033,24 @@ uint64_t k_write(gpr_t *reg){
 	return 0;
 }
 
+uint64_t k_writecolor(gpr_t *reg){
+	// kprintf("Read request arrives\n");
+	uint64_t fd = reg->rdi;
+	if (fd == 1)
+	{
+		uint64_t buff = reg->rsi;
+		// uint64_t count = reg->rdx;
+		// uint64_t color = reg->rbx;
+		flushcolor((char*)buff);
+		// char* str = (char*)(uint64_t*)buff;
+		// kprintf("%s",str);
+		return 1;
+	}
+
+	kprintf("We dont support file pointers other than stdin stdout!!\n");
+	return 0;
+}
+
 uint64_t k_opendir(gpr_t *reg){
 	char* path = (char*) reg->rdi;
 	// kprintf("Path recieved by opendir %s", path);
@@ -1325,5 +1343,6 @@ void syscall_init()
 	p[64] = k_closedir;
 	p[79] = k_getcwd;
 	p[80] = k_chdir;
+	p[98] = k_writecolor;
 	p[99] = temporary_printf;
 }
