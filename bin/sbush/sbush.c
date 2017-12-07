@@ -511,6 +511,76 @@ struct try
 	int b;
 }__attribute__((packed));
 
+int ExecuteCAT2(char* path){
+	pid_t pid=fork();
+	 
+	if(pid==0)
+	{
+		//yield();
+		char* absPath = path;
+		// printf("Abs Path %s\n", absPath);
+		char *myArgs[]={absPath,NULL,NULL};
+
+		execvpe("bin/cat",myArgs,NULL);
+	 //execvpe: variable passing and path passing test pending
+		free(absPath);
+	}
+	if(pid > 0)
+	{
+		// int status;
+		// wait(&status);
+	}
+
+	return 0;
+}
+
+int ExecuteEcho2(char* data){
+	pid_t pid=fork();
+	 
+	if(pid==0)
+	{
+		//yield();
+		// printf("Abs Path %s\n", absPath);
+		char *myArgs[]={data,NULL,NULL};
+
+		execvpe("bin/echo",myArgs,NULL);
+	 //execvpe: variable passing and path passing test pending
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+	}
+
+	return 0;
+}
+
+int ExecuteLS2(char* path){
+	pid_t pid=fork();
+	 
+	if(pid==0)
+	{
+		//yield();
+		// char* myArgs[1];
+		// myArgs[0] = path;
+		// myArgs[1] = NULL;
+
+		 // char *myArgs[]={path,NULL};
+		 // printf("args addr %p %p\n",(uint64_t)myArgs,(uint64_t)myArgs[0]);
+
+		 // execvpe("bin/ls",myArgs,NULL);
+		TESTVFS();
+
+	 //execvpe: variable passing and path passing test pending
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+	}	
+
+	return 0;
+}
 int main_test(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
@@ -539,9 +609,9 @@ int main_test(int argc, char *argv[], char *envp[]) {
 	   //TESTEXECVPE(2);
 	   ////
 	   //TESTWAIT();
-	   test_ps();
+	   // test_ps();
 	   
-	  printf("abcd 1234\n");
+	  // printf("abcd 1234\n");
 
 	// TESTWAIT();
 	 
@@ -563,9 +633,13 @@ int main_test(int argc, char *argv[], char *envp[]) {
 	
 	//TESTVFS();
 
-	// for (int i = 0; i < 2; ++i)
+	// for (int i = 0; i < 60; ++i)
 	// {
-	// 	TESTFILE();
+		// ExecuteCAT2("/Tryme/Piku.txt");
+		// TESTEXECVPE(i);
+		// ExecuteEcho2("Hi");
+		// ExecuteLS2("/");
+		// TESTVFS();
 	// }
 
 	// TESTVFS();

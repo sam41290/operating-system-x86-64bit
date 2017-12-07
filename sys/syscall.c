@@ -27,6 +27,7 @@ extern int proc_end;
 extern uint64_t global_pid;
 extern struct terminal terminal_for_keyboard;
 extern uint64_t RING_0_MODE;
+extern uint64_t upml4;
 
 extern int time_in_sec;
 
@@ -131,19 +132,50 @@ uint64_t temporary_printf(gpr_t *reg)
 	return 0;
 }
 
+
+
+void clean_stack(uint64_t stack)
+{
+	for(int i=0;i<(4096 * 2);i++)
+		*((uint8_t *)(stack - i))=0;
+}
+
+void clean_pg_table(PCB *proc)
+{
+	uint64_t * v_pml4=(uint64_t *)(upml4-(4096 * proc->sno));
+	for(int i=0;i<512;i++)
+		v_pml4[i]=0;
+}
+
 void kill_proc()
 {
 	//kprintf("in exit\n");
 	all_pro[active->sno].state=ZOMBIE;
 	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
+
+	clean_stack(all_pro[active->sno].u_stackbase);
+
+	//clean_stack(all_pro[active->sno].k_stackbase);
+
 	vma *last_vma=(active->mmstruct).vma_list;
+	vma* next_vma;
 	while(last_vma != NULL)
 	{
+		next_vma = last_vma->nextvma;
 		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
-		last_vma = last_vma->nextvma;
-	
+		last_vma = next_vma;
 	}
+	(active->mmstruct).vma_list = NULL;
+
+	for (int i = 0; i < MAX_FD; ++i)
+	{
+		all_pro[active->sno].fd[i] = NULL;
+	}
+
+	all_pro[active->sno].name[0] = '\0';
+	all_pro[active->sno].currentDir[0] = '\0';
+
 	//kprintf("exit status: %d\n",reg->rdi);
 	uint64_t ppid=active->ppid;
 	for(int i=0;i<PROC_SIZE;i++)
@@ -163,6 +195,8 @@ void kill_proc()
 			break;
 	}
 	all_pro[i].state=DEAD;
+	clean_stack(all_pro[i].k_stackbase);
+	clean_pg_table(all_pro + i);
 	proc_descriptor[all_pro[i].sno]=0;
 	active=NULL;
 	return;
@@ -202,7 +236,8 @@ uint64_t syscall_switch(gpr_t *reg)
 	//	kprintf("waitstate: %d\n",active->waitstate);
 	//	//while(1);
 	//}
-	set_tss_rsp((void *)active->k_stack);
+	// set_tss_rsp((void *)active->k_stack);
+	set_tss_rsp((void *)active->k_stackbase);
 	//kprintf("switching to %d %d ",active->pid,active->waitstate);
 	change_ptable(active->cr3);
 	
@@ -295,13 +330,28 @@ uint64_t syscall_exit(gpr_t *reg)
 	all_pro[active->sno].state=ZOMBIE;
 	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
+
+	clean_stack(active->u_stackbase);
+
+	// clean_stack(active->k_stackbase);
+
+	for (int i = 0; i < MAX_FD; ++i)
+	{
+		all_pro[active->sno].fd[i] = NULL;
+	}
+	all_pro[active->sno].name[0] = '\0';
+	all_pro[active->sno].currentDir[0] = '\0';
+
 	vma *last_vma=(active->mmstruct).vma_list;
+	vma* next_vma;
 	while(last_vma != NULL)
 	{
+		next_vma = last_vma->nextvma;
 		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
-		last_vma = last_vma->nextvma;
-	
+		last_vma = next_vma;
 	}
+	(active->mmstruct).vma_list = NULL;
+
 	//kprintf("exit status: %d\n",reg->rdi);
 	uint64_t ppid=active->ppid;
 	for(int i=0;i<PROC_SIZE;i++)
@@ -383,15 +433,28 @@ uint64_t syscall_wait(gpr_t *reg)
 			break;
 	}
 	all_pro[i].state=DEAD;
+	clean_stack(all_pro[i].k_stackbase);
 	proc_descriptor[all_pro[i].sno]=0;
+	clean_pg_table(all_pro + i);
+
+	uint8_t *p=(uint8_t *)(all_pro + i);
+
+
+	for(int j=0;j<sizeof(PCB);j++)
+	{
+		*(p + j)=0x00;
+	}
+
 	//kprintf("wait complete\n");
 	active->k_stack=(uint64_t)reg;
 	active->u_stack=reg->usersp;
-	set_tss_rsp((void *)active->k_stack);
+	// set_tss_rsp((void *)active->k_stack);
+	set_tss_rsp((void *)active->k_stackbase);
 	reg->rax=active->signalling_child;
 	
 	*((uint64_t *)reg->rsi)=active->sigchild_state;
 	active->sigchild_state=DEAD;
+
 	//kprintf("rsi: %p\n",reg->rsi);
 	//while(1);
 	return active->signalling_child;
@@ -510,6 +573,8 @@ uint64_t syscall_exec(gpr_t *reg)
 	char *file_name=(char *)reg->rdi;
 	char **args=(char **)reg->rsi;
 	char **path=(char **)reg->rdx;
+
+	//kprintf("test exec args %p\n",(uint64_t)args[0]);
 	
 	uint64_t namelen=strlen(file_name);
 	
@@ -528,7 +593,7 @@ uint64_t syscall_exec(gpr_t *reg)
 	char cpy_args[args_ctr][1024];	
 	for(int i=0;i<(args_ctr - 1);i++)
 		strcpy(args[i],cpy_args[i],strlen(args[i]));
-	
+	//kprintf("test exec args 2 %p\n",(uint64_t)args[0]);
 	//copy_args(args,(char **)cpy_args,args_ctr);
 	
 	char cpy_path[path_ctr][1024];
@@ -651,27 +716,40 @@ uint64_t syscall_exec(gpr_t *reg)
 		kprintf("exec failed: file not found\n");
 		return 0;
 	}
-	
+	//kprintf("test exec args 2 %p\n",(uint64_t)args[0]);
 	/*Copy the arguements into the new processes address space*/
 	//copy_args((char **)cpy_args,args,args_ctr);
+	uint64_t argsdiff=active->u_stackbase - (uint64_t)args;
+
+	char **newargs=(char **)(child->u_stackbase - argsdiff);
+
+	for(int i=0;i<(args_ctr-1);i++)
+		newargs[i]=args[i];
+
 	for(i=0;i<(args_ctr - 1);i++)
-		strcpy(cpy_args[i],args[i],strlen(cpy_args[i]));
+		strcpy(cpy_args[i],newargs[i],strlen(cpy_args[i]));
 		
-	cpy_filename2args(file_name,args,args_ctr); //copies filename into args
+	cpy_filename2args(file_name,newargs,args_ctr); //copies filename into args
 	
 	strcpy(file_name,child->name,strlen(file_name));
 	//copy_args(cpy_path,path,path_ctr);	
 	/*---------------Create VMA entries for the arguements------*/
 	
-	vma *new_vma=alloc_vma((uint64_t)args, (uint64_t)args + args_ctr);
-	append_to_vma_list(child,new_vma);
-	increment_childpg_ref((uint64_t)args, (uint64_t)args + args_ctr);
+	//vma *new_vma=alloc_vma((uint64_t)args, (uint64_t)args + args_ctr);
+	//append_to_vma_list(child,new_vma);
+	//increment_childpg_ref((uint64_t)args, (uint64_t)args + args_ctr);
+
+	//kprintf("test args: %s\n",newargs[0]);
+
+	//kprintf("test args 2 %p %p\n",(uint64_t)newargs,(uint64_t)newargs[1]);
+
+
 	
 	for(i=0;i<args_ctr;i++)
 	{
-		vma *new_vma=alloc_vma((uint64_t)args[i], (uint64_t)args[i] + strlen(args[i]));
+		vma *new_vma=alloc_vma((uint64_t)newargs[i], (uint64_t)newargs[i] + strlen(newargs[i]));
 		append_to_vma_list(child,new_vma);
-		increment_childpg_ref((uint64_t)args, (uint64_t)args + args_ctr);
+		increment_childpg_ref((uint64_t)newargs[i],(uint64_t)newargs[i] + strlen(newargs[i]));
 	}
 	
 	//--------------------------------------------------------------//
@@ -703,18 +781,19 @@ uint64_t syscall_exec(gpr_t *reg)
 	active=child;
 	
 	child_rg->rip=active->entry_point;
-	child_rg->rdi=(uint64_t)args;
+	child_rg->rdi=(uint64_t)newargs;
 	child_rg->usersp=active->u_stack;
 	
 	i=0;
 	
-	for(i=0;args[i]!=NULL && args!=NULL;i++);
+	for(i=0;args[i]!=NULL && newargs!=NULL;i++);
 	
 	child_rg->rsi=i;
 	
 	active->k_stack=(uint64_t)(child_rg);
 	
-	set_tss_rsp((void *)active->k_stack);
+	set_tss_rsp((void *)active->k_stackbase);
+	// set_tss_rsp((void *)active->k_stack);
 	
 	RING_0_MODE=0;	
 		
@@ -821,7 +900,8 @@ uint64_t syscall_fork(gpr_t *reg)
 	active=child;
 	active->k_stack=(uint64_t)(child_rg);
 	
-	set_tss_rsp((void *)active->k_stack);
+	// set_tss_rsp((void *)active->k_stack);
+	set_tss_rsp((void *)active->k_stackbase);
 	
 	RING_0_MODE=0;	
 		
@@ -860,7 +940,7 @@ uint64_t k_open(gpr_t *reg){
 
 	if (query == NULL || (query != NULL && query->type == DIR))
 	{
-		kprintf("Returning to good world error!\n");
+		kprintf("\nNo Such File!\n");
 		return -1;
 	}
 
@@ -877,7 +957,7 @@ uint64_t k_open(gpr_t *reg){
 			return i;
 		}
 	}
-	kprintf("Returning to good world error!\n");
+	kprintf("\nWe dont support opening more than 20 files!\n");
 	return -1;
 }
 
@@ -953,13 +1033,46 @@ uint64_t k_write(gpr_t *reg){
 	return 0;
 }
 
+uint64_t k_writecolor(gpr_t *reg){
+	// kprintf("Read request arrives\n");
+	uint64_t fd = reg->rdi;
+	if (fd == 1)
+	{
+		uint64_t buff = reg->rsi;
+		// uint64_t count = reg->rdx;
+		// uint64_t color = reg->rbx;
+		flushcolor((char*)buff);
+		// char* str = (char*)(uint64_t*)buff;
+		// kprintf("%s",str);
+		return 1;
+	}
+
+	kprintf("We dont support file pointers other than stdin stdout!!\n");
+	return 0;
+}
+
 uint64_t k_opendir(gpr_t *reg){
 	char* path = (char*) reg->rdi;
 	// kprintf("Path recieved by opendir %s", path);
 	
-	dir* dirobj = (dir*)kmalloc(sizeof(dir));		//Figure out how to free it
+	// dir* dirobj = (dir*)kmalloc(sizeof(dir));		//Figure out how to free it
+	dir* dirobj = getnewdir();
 	inode* query = GetInode(path);
-	dirobj->query_inode = query;
+	if (query == NULL)
+	{
+		return (uint64_t)0;
+	}
+	if (query->type == FILE)
+	{
+		return (uint64_t)0;
+	}
+	int i = 0;
+	for (; path[i] != '\0'; ++i)
+	{
+		dirobj->path[i] = path[i];
+	}
+	dirobj->path[i] = '\0';
+	
 	dirobj->currInode = 1;
 	return (uint64_t)dirobj;
 }
@@ -967,31 +1080,46 @@ uint64_t k_opendir(gpr_t *reg){
 uint64_t k_closedir(gpr_t *reg){
 	// I know its memory leak but cant help
 	dir* dirobj = (dir*)reg->rdi;
-	dirobj->query_inode = NULL;
+	dirobj->path[0] = '\0';
 	dirobj->currInode = -1;
+	dirobj->nextdir = NULL;
+	dirobj = NULL;
+	recycledirstruct(dirobj);
 	return 1;
 }
 
 uint64_t k_readdir(gpr_t *reg){
 	// kprintf("Inside readdir\n");
 	dir* dirobj = (dir*)reg->rdi;
+	if (dirobj == NULL)
+	{
+		return 0;
+	}
 
-	if (dirobj->currInode == -1 || dirobj->currInode >= dirobj->query_inode->familyCount)
+	inode* query = GetInode(dirobj->path);
+	if (query == NULL || dirobj->currInode == -1 || dirobj->currInode >= query->familyCount)
 	{
-		return (uint64_t)0;
+		return 0;
 	}
-	for (int i = 0; i < strlen(dirobj->query_inode->family[dirobj->currInode]->inodeName); ++i)
+	// kprintf("path %s\n", dirobj->path);
+	int i = 0;
+	for (; query->family[(int)dirobj->currInode]->inodeName[i] != '\0'; ++i)
 	{
-		dirobj->currDirent.d_name[i] = dirobj->query_inode->family[dirobj->currInode]->inodeName[i];
+		dirobj->currDirent.d_name[i] = query->family[dirobj->currInode]->inodeName[i];
+		// kprintf("%s", query->family[dirobj->currInode]->inodeName);
 	}
-	dirobj->currDirent.d_name[(strlen(dirobj->query_inode->family[dirobj->currInode]->inodeName))] = '\0';
+	dirobj->currDirent.d_name[i] = '\0';
+
 	dirobj->currInode++;
 	return (uint64_t)&dirobj->currDirent;
 }
 
 uint64_t k_chdir(gpr_t *reg){
-
 	char* path = (char*)reg->rdi;
+
+		// kprintf("Change dir request %s\n", path);
+
+
 	if(path == NULL){
 		return 0;
 	}
@@ -999,8 +1127,15 @@ uint64_t k_chdir(gpr_t *reg){
 	char* newPath = NULL;
 	if (path[0] == '/')
 	{
-		if (NULL == GetInode(path))
+		inode* query = GetInode(path);
+		if (NULL == query)
 		{
+			// kprintf("Change dir request inode NULL%s\n", path);
+			return 0;
+		}
+		if (FILE == query->type)
+		{
+			//Reset newPath
 			return 0;
 		}
 		newPath = path;
@@ -1018,7 +1153,14 @@ uint64_t k_chdir(gpr_t *reg){
 		newPath[lastPos++] = '/';
 		newPath[lastPos] = '\0';
 
-		if (NULL == GetInode(newPath))
+		inode* query = GetInode(newPath);
+		if (NULL == query)
+		{
+			//Reset newPath
+			newPath[lastPos_bk] = '\0';
+			return 0;
+		}
+		if (FILE == query->type)
 		{
 			//Reset newPath
 			newPath[lastPos_bk] = '\0';
@@ -1126,7 +1268,14 @@ uint64_t syscall_kill(gpr_t *reg)
 		if(all_pro[sno].pid==pid)
 			break;
 	}
-	
+
+	for (int i = 0; i < MAX_FD; ++i)
+	{
+		all_pro[active->sno].fd[i] = NULL;
+	}
+	all_pro[active->sno].name = NULL;
+	all_pro[active->sno].currentDir = NULL;
+
 	all_pro[sno].state=DEAD;
 	proc_descriptor[sno]=0;
 	all_pro[sno].cr3=0;
@@ -1194,5 +1343,6 @@ void syscall_init()
 	p[64] = k_closedir;
 	p[79] = k_getcwd;
 	p[80] = k_chdir;
+	p[98] = k_writecolor;
 	p[99] = temporary_printf;
 }

@@ -39,8 +39,9 @@ void UpdateShellPrompt()
 	char* currDir = GetCurrentDir();
 	if (currDir != NULL)
 	{
-		SHELL(currDir);
-		SHELL(" sbush >" );
+		SHELL("\n");
+		SHELLCOLOR(currDir);
+		SHELLCOLOR(" sbush> " );
 	}
 }
 
@@ -222,7 +223,7 @@ void ExecutePipe(command* cmd1, command* cmd2){
 
 
 int ExecuteBinary(char** vector, int vecCount){
-
+	return 1;
 	char* cmd;
 	// char* myArgs[4] ;
 
@@ -305,7 +306,7 @@ int ExecuteCAT(char* path){
 		// printf("Abs Path %s\n", absPath);
 		char *myArgs[]={absPath,NULL,NULL};
 
-		execvpe("bin/cat",myArgs,NULL);
+		execvpe("/bin/cat",myArgs,NULL);
 	 //execvpe: variable passing and path passing test pending
 		free(absPath);
 	}
@@ -340,7 +341,7 @@ int ExecuteEcho(char* data){
 }
 
 int ExecuteBuiltIn(char** vector, int vecCount){
-
+	// printf("Inside Builtin\n");
 	char* cmd;
 	// char* myArgs[4] ;
 
@@ -356,6 +357,7 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	LOGG("cmd");
 	if (0 == strncmp(cmd, "cd", 2))
 	{
+		// printf("Inside Change Dir\n");
 		return ChangeDirectory(vector[1]);				//TODO Clean it
 	}
 	else if (0 == strncmp(cmd, "ls", 2))
@@ -371,29 +373,29 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	{		
 		return ExecuteEcho(vector[1]);				//TODO Clean it
 	}
-	else if (0 == strncmp(cmd, "export", 6))
-    {
-    		LOGG("Export");
-            return ExportEnvVar(vector[1]);                              //TODO Clean it
-    }
-	else if (0 == strncmp(cmd, "exit", 4))
-	{
-		SHELL("Shutting Down!\n");
-		exit(1);
-	}
-	else if (CheckIfPipeCommand(vector, vecCount))
-	{
-		LOG("WHY AM AI COMING HERE\n");
-		command* cmd1 = malloc(sizeof(command)); command* cmd2 = malloc(sizeof(command));
-		ParsePipeCommand(cmd1, cmd2, vector, vecCount);
-		ExecutePipe(cmd1, cmd2);
-		return 0;
-	}
+	// else if (0 == strncmp(cmd, "export", 6))
+ //    {
+ //    		LOGG("Export");
+ //            return ExportEnvVar(vector[1]);                              //TODO Clean it
+ //    }
+	// else if (0 == strncmp(cmd, "exit", 4))
+	// {
+	// 	SHELL("Shutting Down!\n");
+	// 	exit(1);
+	// }
+	// else if (CheckIfPipeCommand(vector, vecCount))
+	// {
+	// 	LOG("WHY AM AI COMING HERE\n");
+	// 	command* cmd1 = malloc(sizeof(command)); command* cmd2 = malloc(sizeof(command));
+	// 	ParsePipeCommand(cmd1, cmd2, vector, vecCount);
+	// 	ExecutePipe(cmd1, cmd2);
+	// 	return 0;
+	// }
 	else
 	{
 		//We dont support anything other thatn built in commands
-		SHELL("We dont support anything other thatn built in commands\n");
-		return 0;
+		// SHELL("We dont support anything other thatn built in commands\n");
+		return 1;
 	}
 
 	LOGG("Not match");
@@ -425,7 +427,7 @@ int RedirectCommand(char* input){
 
 	int ret = Execute(input, vector, vecCount);
 	if( ret == -1){
-		SHELL("Failed!\n");
+		SHELL("\nFailed!\n");
 	}
 	
 

@@ -9,31 +9,24 @@
 
 int main(int argc, char *argv[], char *envp[]) {
 
+	char* queryPath = argv[1];
 
-	if(argc > 2)
-	{
-		puts("Invalid number of arguements");
-		return -1;
-	}
-	else if(argc==2)
-	{
-		char* path = argv[1];
-		// printf("param %s\n", path);
+    struct dirent *pDirent;
+    DIR *pDir;
 
-		DIR *dir;
-		struct dirent *ent;
-		if ((dir = opendir (path)) != NULL) {
-		  /* print all the files and directories within directory */
-		  while ((ent = readdir (dir)) != NULL) {
-		    printf ("%s\n", ent->d_name);
-		  }
-		  closedir (dir);
-		} else {
-		  /* could not open directory */
-		  return -1;
-		}	
 
-	}
+    pDir = opendir (queryPath);
+    if (pDir == NULL) {
+        puts ("Cannot open directory \n");
+        return 1;
+    }
+    puts("\n");
+    while ((pDirent = readdir(pDir)) != NULL) {
+        puts (pDirent->d_name);
+        puts("\n");
+    }
+    // printf("readdir finished\n");
+    closedir(pDir);
 
 	return 1;
 }

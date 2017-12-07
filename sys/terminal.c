@@ -5,7 +5,7 @@
 extern struct terminal terminal_for_keyboard;
 
 
-__volatile__ int READMODEON = 0;
+__volatile__ int READMODEON = 0;		//Made it volatile else while loop was not breaking because of tight loop and compiler optimization
 
 uint64_t read(struct terminal* self, uint64_t addr){
 
@@ -75,8 +75,7 @@ void tunnel(struct terminal* self){
 			return;
 		}
 
-		//Local Echo
-		LocalEcho(c);
+
 		
 		if (self->stdinlength >= 1022)
 		{
@@ -84,6 +83,13 @@ void tunnel(struct terminal* self){
 			self->stdin[self->stdinlength] = '\0';
 			READMODEON = 0;
 		}
+		else if (self->stdinlength == 0 && c == '-')
+		{
+			return;
+		}
+
+		//Local Echo
+		LocalEcho(c);
 
 		if (c == '\n')
 		{

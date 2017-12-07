@@ -24,6 +24,7 @@ int Execute(char *cmd, char** vector, int vecCount)
                 return 0;
         }
 
+        return -1;
         LOGG(cmd);
 	//File checking part starts here-----------------------------------
                 char *path;
@@ -31,12 +32,12 @@ int Execute(char *cmd, char** vector, int vecCount)
 
                 //TODO commented this remove later
                 // path=getenv("PATH");
-                path = "";
+                path = "/Tryme";
 
 
                 LOGG( path);
                 // int cmdind=0;
-                char dir[1024];
+                char dir[100];
                 int k=0;
 
 
@@ -75,6 +76,7 @@ int Execute(char *cmd, char** vector, int vecCount)
                                 {
                                         LOGG("Not NULL");
                                         LOGG( dir);
+                                        // puts("Fopen success");
                                         //Read first 18 chars to confirm it is sbush script "#!rootfs/bin/sbush"
                                         char compare[19]; int comp = 0;
                                         for (; comp < 18; ++comp)
@@ -93,7 +95,7 @@ int Execute(char *cmd, char** vector, int vecCount)
                                         compare[comp] = '\0';
 
 
-
+                                        // puts(compare);
                                         LOGG("compare %s\n");
 
 
@@ -104,33 +106,36 @@ int Execute(char *cmd, char** vector, int vecCount)
                                                 LOGG("strncmp match");
                                                 File *fp=fopen(dir,"r");
                                                 char c;
-                                                char cmd[1024];
+                                                char cmd[100];
                                                 int k=0;
                                                 c=fgetc(fp);
                                                 int t=0;
-                                                while(c!=EOF)
+                                                while(c!='\0')
                                                 {
                                                         if(c=='#'){t=1;}        //Ignore Comments
                                                         
                                                         if(c=='\n')
                                                         {
-                                                                cmd[k]='\0';
-
+                                                                cmd[k-1]='\0';
+                                                                puts("I am here--");puts(cmd);
                                                                 if(t==0 && k>0)
                                                                 {
                                                                         LOGG("executing command:%s\n");LOGG(cmd);
                                                                         int vecCount2;
                                                                         char** vector2 = SplitString(getargs(cmd), &vecCount2);
+                                                                        // puts("Execute cmd");puts(vector2[0]);
                                                                         Execute(cmd, vector2, vecCount2);//replace with correct function
                                                                 }
 
                                                                 k=0;t=0;
                                                         }
                                                         else if(t==0)
-                                                        {
+                                                        {         
+                                                                putchar(c);
                                                                 cmd[k++]=c;
                                                         }
                                                         c=fgetc(fp);
+                                                        putchar(c);
                                                 }
                                                 fclose(fp);
                                                 return 1;
@@ -150,7 +155,7 @@ int Execute(char *cmd, char** vector, int vecCount)
 
                 }
 
-
+                // printf("Not a builtin neither script\n" );
                 // If nobody could run leave it to execvp
                 LOGG("Not a builtin neither script\n");
                 return ExecuteBinary(vector, vecCount);
@@ -158,6 +163,8 @@ int Execute(char *cmd, char** vector, int vecCount)
 }
 
 int ExecuteAbsBinary(char *cmd, char** vector, int vecCount){
+
+
         //TODO: check if inbuilt command. if yes then run and exit
         LOGG("Enter ExecuteAbsBinary");
 
@@ -165,11 +172,23 @@ int ExecuteAbsBinary(char *cmd, char** vector, int vecCount){
         LOGG(cmd);
         //File checking part starts here-----------------------------------
 
+        char* dir = GetCurrentDir();
+        int l = 0;
+        while(dir[l] != '\0'){
+                l++;
+        }
+
+        char* path = vector[0];
+
+        for (int i = 2; path[i] != '\0'; ++i)
+        {
+                dir[l++] = path[i];
+        }
+        dir[l] = '\0';
 
 
-        char* dir = vector[0];
         //execute shell script
-        // puts(dir);
+        // puts(path);
         File *script=fopen(dir,"r");
         if (script == NULL)
         {
@@ -209,17 +228,17 @@ int ExecuteAbsBinary(char *cmd, char** vector, int vecCount){
                         LOGG("strncmp match");
                         File *fp=fopen(dir,"r");
                         char c;
-                        char cmd[1024];
+                        char cmd[100];
                         int k=0;
                         c=fgetc(fp);
                         int t=0;
-                        while(c!=EOF)
+                        while(c!='\0')
                         {
                                 if(c=='#'){t=1;}        //Ignore Comments
                                 
                                 if(c=='\n')
                                 {
-                                        cmd[k]='\0';
+                                        cmd[k-1]='\0';
 
                                         if(t==0 && k>0)
                                         {
@@ -242,6 +261,7 @@ int ExecuteAbsBinary(char *cmd, char** vector, int vecCount){
                 } //TO DO: else run execvp to execute binary
                 else
                 {
+                        return -1;
                         // puts("%s is not Sbush script\n");puts(dir);
                         LOG("%s will execute as binary\n", dir);
                         // vector[0] = dir;

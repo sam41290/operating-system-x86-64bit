@@ -10,6 +10,63 @@
 
 
 inode* root_inode;
+dir* dir_recycle_list = NULL;
+//Reuse the dir objects returned in opendir
+void recycledirstruct(dir* nodeToRemove){
+	nodeToRemove->nextdir = NULL;
+
+	if (dir_recycle_list == NULL)
+	{
+		dir_recycle_list = nodeToRemove;
+		#ifdef DEBUG_MALLOC
+		kprintf("Added dir to recycle\n");
+		#endif
+		return;
+	}
+
+	dir* last = dir_recycle_list;
+	while(last->nextdir != NULL)
+	{
+		last = last->nextdir;
+	}
+	last->nextdir = nodeToRemove;
+	#ifdef DEBUG_MALLOC
+	kprintf("Added dir to recycle\n");
+	#endif
+}
+
+dir* getdir_from_recylebin(){
+	if (dir_recycle_list == NULL)
+	{
+		return NULL;
+	}
+
+	dir* freedir = dir_recycle_list;
+	dir_recycle_list = dir_recycle_list->nextdir;
+
+	#ifdef DEBUG_MALLOC
+	kprintf("Reused dir\n");
+	#endif
+
+	return freedir;
+}
+
+dir* getnewdir(){
+	dir* new_dir = getdir_from_recylebin();
+	if (new_dir == NULL)
+	{
+		// kprintf("Allocating new malloc dir\n");
+		new_dir = (dir*)kmalloc(sizeof(dir));
+	}
+
+	new_dir->currInode = -1;
+	new_dir->path[0] = '\0';
+	new_dir->currDirent.d_name[0] = '\0';
+	new_dir->nextdir = NULL;
+	// kprintf("Inside anon_vma %p %p\n",new_vma->vstart, new_vma->vend);
+	return new_dir;	
+}
+
 
 int findFamily(inode* node, char* token, uint64_t tokenLength){
 	for (int i = 1; i < node->familyCount; ++i)
@@ -85,6 +142,7 @@ void InsertIntoRoot(char* path, uint64_t start, uint64_t end, int type)
 
 void init_tarfs(){
 
+	//One time usage of malloc will never be freed
 	root_inode = (inode*)kmalloc(sizeof(inode));
 	root_inode->start = 0;
 	root_inode->end = 1;
@@ -103,11 +161,12 @@ void init_tarfs(){
     	if ((strlen(header->name) > 0) && (header->size[0]!='\0'))
     	{
 	   		// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, datEnd-dataStart);
-    		if (strncmp(header->name, "lib/", 4) != 0 && strncmp(header->name, "bin/", 4) != 0)	//Dont parse libc folder. Some bug in printf
+    		// if (strncmp(header->name, "lib/", 4) != 0 && strncmp(header->name, "bin/", 4) != 0)	//Dont parse libc folder. Some bug in printf
     		{
 	    		if (header->typeflag[0] == '0')
 	    		{
 	    			//File
+	    			// kprintf("Found %s %s %d!!\n", header->name, header->typeflag, datEnd-dataStart);
 	    			InsertIntoRoot(header->name, dataStart, datEnd, FILE);
 	    		}
 	    		else if (header->typeflag[0] == '5')

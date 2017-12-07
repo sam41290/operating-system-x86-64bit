@@ -20,6 +20,7 @@ static const int EOF = -1;
 
 int putchar(int c);
 int puts(const char *s);
+int putcharcolor(int c);
 
 int gets(char *s);
 

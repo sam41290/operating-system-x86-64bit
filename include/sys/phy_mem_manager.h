@@ -1,3 +1,5 @@
+#ifndef __PHY_MEM_MANAGER__
+#define __PHY_MEM_MANAGER__
 
 #define PAGE_SIZE 0x1000
 
@@ -8,3 +10,5 @@ void printtotalFreeBlocks();
 int get_reference_count(uint64_t paddr);
 void increment_reference_count(uint64_t paddr);
 void decrement_reference_count(uint64_t paddr);
+
+#endif

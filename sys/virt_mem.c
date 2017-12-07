@@ -8,7 +8,7 @@
 uint64_t kern_VA;
 
 vma* vma_recycle_list = NULL;
-
+//Recycle vma structs
 void recyclevmastruct(vma* nodeToRemove){
 	nodeToRemove->nextvma = NULL;
 
