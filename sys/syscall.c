@@ -853,7 +853,20 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->heap_top =active->heap_top;
 	copy_cur_dir(child);
 	copy_name(child,active->name);
-
+	//Copy all fds from parent to child
+	for (int i = 0; i < MAX_FD; ++i)
+	{
+		if (active->fd[i] != NULL)
+		{
+			child->fd[i] = (uint64_t*)kmalloc(sizeof(file_object));
+			((file_object*)child->fd[i])->currentoffset = ((file_object*)active->fd[i])->currentoffset;
+			((file_object*)child->fd[i])->node = ((file_object*)active->fd[i])->node;
+		}
+		else
+		{
+			child->fd[i] = NULL;
+		}
+	}
 	
 	
 	(child->mmstruct).vma_list=NULL;

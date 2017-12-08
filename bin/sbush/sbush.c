@@ -647,5 +647,6 @@ int main_test(int argc, char *argv[], char *envp[]) {
 	// TESTCHDIR();
 
 	// TESTEXECVPE();
+	TESTFILE();
 	while(1);
 }
