@@ -76,32 +76,32 @@ int testidontknow(){
 
 void TESTMALLOC(){
 
- {
- 	int* trymalloc = (int*)malloc(2048*sizeof(int));
- 	// printf("add malloc %p\n", trymalloc);	
- 	trymalloc[0] = 1;
- 	printf("malloc success %d\n", trymalloc[0]);
- 	trymalloc[2047] = 2;
- 	printf("malloc success %d\n", trymalloc[2047]);
-
-
- 	free(trymalloc);
-
-
- 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
- 	trymalloc2[0] = 1;
-
- 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
- 	trymalloc3[0] = 1;
-
- 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
- 	trymalloc4[0] = 1;
-
- 	free(trymalloc2);
- 	free(trymalloc3);
- 	free(trymalloc4);	
-
- }
+// {
+// 	int* trymalloc = (int*)malloc(2048*sizeof(int));
+// 	// printf("add malloc %p\n", trymalloc);	
+// 	trymalloc[0] = 1;
+// 	printf("malloc success %d\n", trymalloc[0]);
+// 	trymalloc[2047] = 2;
+// 	printf("malloc success %d\n", trymalloc[2047]);
+//
+//
+// 	free(trymalloc);
+//
+//
+// 	int* trymalloc2 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc2[0] = 1;
+//
+// 	int* trymalloc3 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc3[0] = 1;
+//
+// 	int* trymalloc4 = (int*)malloc(1000*sizeof(int));
+// 	trymalloc4[0] = 1;
+//
+// 	free(trymalloc2);
+// 	free(trymalloc3);
+// 	free(trymalloc4);	
+//
+// }
 //{
 //	int* trymalloc = (int*)malloc(2048*sizeof(int));
 //	// printf("add malloc %p\n", trymalloc);	
@@ -139,8 +139,8 @@ void TESTMALLOC(){
 // 		printf("Allocated %d %p %d\n", kill, killme, killme[0]);
 // 		kill++;
 // 	}
-
-// }
+//
+//}
 
 // {
 // 	//Allocated 545269 857f8000 545269
@@ -565,11 +565,11 @@ int ExecuteLS2(char* path){
 		// myArgs[0] = path;
 		// myArgs[1] = NULL;
 
-		 // char *myArgs[]={path,NULL};
+		 char *myArgs[]={path,NULL};
 		 // printf("args addr %p %p\n",(uint64_t)myArgs,(uint64_t)myArgs[0]);
 
-		 // execvpe("bin/ls",myArgs,NULL);
-		TESTVFS();
+		  execvpe("bin/ls",myArgs,NULL);
+		//TESTVFS();
 
 	 //execvpe: variable passing and path passing test pending
 	}
@@ -584,69 +584,32 @@ int ExecuteLS2(char* path){
 int main_test(int argc, char *argv[], char *envp[]) {
 
 	puts("sbush> Hello World!!\n");
-
-
-	// TESTMALLOC();
 	
-	 //TESTCONTEXTSWITCH();
-	 //TESTEXIT();
-	 
-	 //TESTWAIT();
-	 
-	 
-	 //TESTEXIT();
-	 
-	   //TESTEXECVPE(1);
-	   ////
-	   //printf("back from execvpe\n");
-	   ////
-	   //TESTEXECVPE(2);
-	   ////
-	   //TESTEXECVPE(2);
-	   //
-	   //TESTEXECVPE(2);
-	   ////
-	   //TESTEXECVPE(2);
-	   ////
-	   //TESTWAIT();
-	   // test_ps();
-	   
-	  // printf("abcd 1234\n");
+	for(int i=0;i<50;i++)
+	{
+		ExecuteLS2("/");
+	}
 
-	// TESTWAIT();
-	 
-	  //TESTCONTEXTSWITCH();
-	 
-	 
-	 
-	 //TESTEXECVPE(1);
-	 
-	 //test[0]='A';
-	 
-	 //printf("%s",test);
-	 
-	 //puts("child execution complete\n");
-	 
-	 //puts("execvpe: variable passing and path passing test pending\n");
+	int *a=(int *)malloc(sizeof(int) * 5);
 	
-	//execvpe: variable passing and path passing test pending
+	a[0]=5;
 	
-	//TESTVFS();
-
-	// for (int i = 0; i < 60; ++i)
-	// {
-		// ExecuteCAT2("/Tryme/Piku.txt");
-		// TESTEXECVPE(i);
-		// ExecuteEcho2("Hi");
-		// ExecuteLS2("/");
-		// TESTVFS();
-	// }
-
-	// TESTVFS();
-
-	// TESTCHDIR();
-
-	// TESTEXECVPE();
+	pid_t pid=fork();
+	
+	if(pid==0)
+	{
+		a[0]=a[0] + 1;
+		printf("I am child %d\n",a[0]);
+		exit(0);
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+		printf("I am parent %d\n",a[0]);
+	}
+	//TESTWAIT();
+	//TESTMALLOC();
 	TESTFILE();
 	while(1);
 }

@@ -156,12 +156,14 @@ int remove_from_vma_list(PCB* task, uint64_t startAddr, uint64_t endAddr){
 	if (task->mmstruct.vma_list->vstart <= startAddr && task->mmstruct.vma_list->vend >= endAddr)
 	{
 		vma* nodeToRemove = task->mmstruct.vma_list;
+		
+		unmap_phyaddr_range(task->mmstruct.vma_list->vstart, task->mmstruct.vma_list->vend);
+
 		task->mmstruct.vma_list = task->mmstruct.vma_list->nextvma;
 		//TODO Either maintain a freelist or free this physical page of vma
 		recyclevmastruct(nodeToRemove);
-
+		//unmap_phyaddr_range(nodeToRemove->vstart, nodeToRemove->vend);
 		//Free Physical page
-		unmap_phyaddr_range(task->mmstruct.vma_list->vstart, task->mmstruct.vma_list->vend);
 		return 1;
 	}
 

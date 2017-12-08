@@ -340,6 +340,49 @@ int ExecuteEcho(char* data){
 	return 0;
 }
 
+int ExecutePS(){
+	pid_t pid=fork();
+	 
+	if(pid==0)
+	{
+		//yield();
+		// printf("Abs Path %s\n", absPath);
+		//char *myArgs[]={data,NULL,NULL};
+
+		execvpe("bin/ps",NULL,NULL);
+	 //execvpe: variable passing and path passing test pending
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+	}
+
+	return 0;
+}
+
+
+int ExecuteKill(char* data){
+	pid_t pid=fork();
+	 
+	if(pid==0)
+	{
+		//yield();
+		// printf("Abs Path %s\n", absPath);
+		char *myArgs[]={data,NULL,NULL};
+
+		execvpe("bin/kill",myArgs,NULL);
+	 //execvpe: variable passing and path passing test pending
+	}
+	if(pid > 0)
+	{
+		int status;
+		wait(&status);
+	}
+
+	return 0;
+}
+
 int ExecuteBuiltIn(char** vector, int vecCount){
 	// printf("Inside Builtin\n");
 	char* cmd;
@@ -372,6 +415,14 @@ int ExecuteBuiltIn(char** vector, int vecCount){
 	else if (0 == strncmp(cmd, "echo", 4))
 	{		
 		return ExecuteEcho(vector[1]);				//TODO Clean it
+	}
+	else if (0 == strncmp(cmd, "ps", 2))
+	{		
+		return ExecutePS();				//TODO Clean it
+	}
+	else if (0 == strncmp(cmd, "kill", 4))
+	{		
+		return ExecuteKill(vector[1]);				//TODO Clean it
 	}
 	// else if (0 == strncmp(cmd, "export", 6))
  //    {

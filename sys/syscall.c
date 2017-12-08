@@ -149,12 +149,12 @@ void clean_pg_table(PCB *proc)
 
 void kill_proc()
 {
-	//kprintf("in exit\n");
+	//kprintf("in kill\n");
 	all_pro[active->sno].state=ZOMBIE;
 	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
 
-	clean_stack(all_pro[active->sno].u_stackbase);
+	//clean_stack(all_pro[active->sno].u_stackbase);
 
 	//clean_stack(all_pro[active->sno].k_stackbase);
 
@@ -162,6 +162,8 @@ void kill_proc()
 	vma* next_vma;
 	while(last_vma != NULL)
 	{
+		//kprintf("removing vma %p %p\n",last_vma->vstart, last_vma->vend);
+		
 		next_vma = last_vma->nextvma;
 		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
 		last_vma = next_vma;
@@ -195,12 +197,14 @@ void kill_proc()
 			break;
 	}
 	all_pro[i].state=DEAD;
-	clean_stack(all_pro[i].k_stackbase);
-	clean_pg_table(all_pro + i);
+	//clean_stack(all_pro[i].k_stackbase);
+	//clean_pg_table(all_pro + i);
 	proc_descriptor[all_pro[i].sno]=0;
 	active=NULL;
 	return;
 }
+
+void get_phys_addr(uint64_t addr);
 
 uint64_t syscall_switch(gpr_t *reg)
 {
@@ -228,19 +232,10 @@ uint64_t syscall_switch(gpr_t *reg)
 	}
 	PCB *p_to=get_nextproc();
 	active=p_to;
-	//if (exectr==3)
-	//{
-	//	kprintf("pid: %d\n",active->pid);
-	//	kprintf("sno: %d\n",active->sno);
-	//	kprintf("state: %d\n",active->state);
-	//	kprintf("waitstate: %d\n",active->waitstate);
-	//	//while(1);
-	//}
 	// set_tss_rsp((void *)active->k_stack);
 	set_tss_rsp((void *)active->k_stackbase);
 	//kprintf("switching to %d %d ",active->pid,active->waitstate);
 	change_ptable(active->cr3);
-	
 				//while(1);
 	
 	if(active->state==0)
@@ -331,7 +326,7 @@ uint64_t syscall_exit(gpr_t *reg)
 	//proc_descriptor[active->sno]=0;
 	all_pro[active->sno].cr3=0;
 
-	clean_stack(active->u_stackbase);
+	//clean_stack(active->u_stackbase);
 
 	// clean_stack(active->k_stackbase);
 
@@ -346,6 +341,8 @@ uint64_t syscall_exit(gpr_t *reg)
 	vma* next_vma;
 	while(last_vma != NULL)
 	{
+		//kprintf("removing vma %p %p\n",last_vma->vstart, last_vma->vend);
+
 		next_vma = last_vma->nextvma;
 		remove_from_vma_list(active,last_vma->vstart, last_vma->vend);
 		last_vma = next_vma;
@@ -433,9 +430,9 @@ uint64_t syscall_wait(gpr_t *reg)
 			break;
 	}
 	all_pro[i].state=DEAD;
-	clean_stack(all_pro[i].k_stackbase);
+	//clean_stack(all_pro[i].k_stackbase);
 	proc_descriptor[all_pro[i].sno]=0;
-	clean_pg_table(all_pro + i);
+	//clean_pg_table(all_pro + i);
 
 	uint8_t *p=(uint8_t *)(all_pro + i);
 
@@ -853,6 +850,8 @@ uint64_t syscall_fork(gpr_t *reg)
 	child->heap_top =active->heap_top;
 	copy_cur_dir(child);
 	copy_name(child,active->name);
+	(child->mmstruct).vma_list=NULL;
+	copy_vma(child);
 	//Copy all fds from parent to child
 	for (int i = 0; i < MAX_FD; ++i)
 	{
@@ -869,8 +868,6 @@ uint64_t syscall_fork(gpr_t *reg)
 	}
 	
 	
-	(child->mmstruct).vma_list=NULL;
-	copy_vma(child);
 	
 	//while(1);
 	change_ptable(child->cr3);
@@ -912,6 +909,7 @@ uint64_t syscall_fork(gpr_t *reg)
 	//kprintf("child cr3: %p parent cr3: %p\n",child->cr3,active->cr3);
 	active=child;
 	active->k_stack=(uint64_t)(child_rg);
+	
 	
 	// set_tss_rsp((void *)active->k_stack);
 	set_tss_rsp((void *)active->k_stackbase);

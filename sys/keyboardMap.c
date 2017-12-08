@@ -86,7 +86,7 @@ void MakeKeyboardMapping(){
 	ScanCodeMap[(int)(0x02)] = '1';
 	ScanCodeMap[(int)(0x06)] = '5';
 	ScanCodeMap[(int)(0x0A)] = '9';
-	ScanCodeMap[(int)(0x0E)] = '\b';
+	ScanCodeMap[(int)(0x0E)] = '-';
 	ScanCodeMap[(int)(0x12)] = 'e';
 	ScanCodeMap[(int)(0x16)] = 'u';
 	ScanCodeMap[(int)(0x1A)] = '[';

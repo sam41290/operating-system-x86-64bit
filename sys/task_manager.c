@@ -40,7 +40,7 @@ uint64_t proc_descriptor[PROC_SIZE];
 
 uint64_t kstackbase;
 
-uint64_t cow_page[512];
+uint8_t cow_page[4096];
 
 uint8_t parent_stack[4096];
 
@@ -130,7 +130,7 @@ uint64_t mappageTable(uint64_t proc_index, int new)
 	uint64_t *v_pml4=(uint64_t *)(upml4-(4096 * proc_index));
 	//kprintf("\nv_pml4:%p\n",v_pml4);
 	
-	
+	//kprintf("mapping page table\n");
 	
 	uint64_t p_pml4=map_phyaddr((uint64_t)v_pml4);
 	
@@ -147,12 +147,13 @@ uint64_t mappageTable(uint64_t proc_index, int new)
 	
 	for(int i=0;i<510;i++)
 	{
-		v_pml4[i]=0x0;
-		if(p1[i]!=0x0 && new==0)
-			v_pml4[i]=(p1[i] & 0xFFFFFFFFFFFFF000) | 5;
+		v_pml4[i]=0x0;	
 	}
 	v_pml4[511]=p1[511];
 	v_pml4[510]=(p_pml4 & 0xFFFFFFFFFFFFF000) | 7;
+	
+	
+	
 	//kprintf("\nvpml4 511: %p\n",v_pml4[511]);
 	//kprintf("old 511: %p\n",(p1[511] & 0xFFFFFFFFFFFFF000) | 7);
 	//while(1);
@@ -176,6 +177,7 @@ void change_ptable(uint64_t addr)
 int check_cow(uint64_t addr)
 {
 	
+	
 	uint64_t p1_index = (addr << 16) >> (9 + 9 + 9 + 12 + 16);
 	uint64_t p2_index = (addr << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
 	uint64_t p3_index = (addr << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
@@ -191,17 +193,17 @@ int check_cow(uint64_t addr)
 	
 	uint64_t *p4=(uint64_t *)base;
 	
-	base=0xFFFF000000000000;
-
-	base=(((base >> 48)<<9)|0x1FE)<<39;
-    base=(((base >> 39)<<9)|0x1FE)<<30;
-    base=(((base >> 30)<<9)|0x1FE)<<21;
-    base=(((base >> 21)<<9)|0x1FE)<<12;
-	
-	uint64_t *p1=(uint64_t *)base;
+	//base=0xFFFF000000000000;
+    //
+	//base=(((base >> 48)<<9)|0x1FE)<<39;
+    //base=(((base >> 39)<<9)|0x1FE)<<30;
+    //base=(((base >> 30)<<9)|0x1FE)<<21;
+    //base=(((base >> 21)<<9)|0x1FE)<<12;
+	//
+	//uint64_t *p1=(uint64_t *)base;
 	
 	// kprintf("%p\n",p1[p1_index]);
-	if(p4[p4_index]!=0 && (p1[p1_index] & 0b111)==5)
+	if(p4[p4_index]!=0 && (p4[p4_index] & 0b111)==5)
 	{
 		
 		return 1;
@@ -211,63 +213,153 @@ int check_cow(uint64_t addr)
 }
 
 
+uint64_t get_phys_addr(uint64_t addr)
+{
+	uint64_t p1_index = (addr << 16) >> (9 + 9 + 9 + 12 + 16);
+	uint64_t p2_index = (addr << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
+	uint64_t p3_index = (addr << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
+	uint64_t p4_index = (addr << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
+	
+	
+	uint64_t base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|0x1FE)<<30;
+    base=(((base >> 30)<<9)|0x1FE)<<21;
+    base=(((base >> 21)<<9)|0x1FE)<<12;
+	
+	uint64_t *p1=(uint64_t *)base;
+	
+	uint64_t p2_pg=p1[p1_index];
+	
+	if(!p2_pg)
+		return 0;
+	
+	base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|0x1FE)<<30;
+    base=(((base >> 30)<<9)|0x1FE)<<21;
+    base=(((base >> 21)<<9)|p1_index)<<12;
+	
+	uint64_t *p2=(uint64_t *)base;
+	
+	uint64_t p3_pg=p2[p2_index];
+	
+	if(!p3_pg)
+		return 0;
+	
+	
+	if(!p2_pg)
+		return 0;
+	
+	base=0xFFFF000000000000;
+
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|0x1FE)<<30;
+    base=(((base >> 30)<<9)|p1_index)<<21;
+    base=(((base >> 21)<<9)|p2_index)<<12;
+	
+	uint64_t *p3=(uint64_t *)base;
+	
+	uint64_t p4_pg=p3[p3_index];
+	
+	if(!p4_pg)
+		return 0;
+	
+	base=0xFFFF000000000000;
+	
+	base=(((base >> 48)<<9)|0x1FE)<<39;
+    base=(((base >> 39)<<9)|p1_index)<<30;
+    base=(((base >> 30)<<9)|p2_index)<<21;
+    base=(((base >> 21)<<9)|p3_index)<<12;
+	
+	
+	uint64_t *p4=(uint64_t *)base;
+	
+	uint64_t padd=p4[p4_index];
+	
+	if(!padd)
+		return 0;
+	
+	//kprintf("phys addr of %p is %p\n",addr,p4[p4_index]);
+	
+	return padd;
+}
+
 void increment_childpg_ref(uint64_t vaddr_start,uint64_t vaddr_end)
 {
 	uint64_t marked=0;
 	while (vaddr_start <= vaddr_end)
 	{
-	
-		uint64_t p1_index = (vaddr_start << 16) >> (9 + 9 + 9 + 12 + 16);
-		uint64_t p2_index = (vaddr_start << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
-		uint64_t p3_index = (vaddr_start << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
-		uint64_t p4_index = (vaddr_start << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
-		
-		
-		uint64_t base=0xFFFF000000000000;
-	
-		base=(((base >> 48)<<9)|0x1FE)<<39;
-		base=(((base >> 39)<<9)|p1_index)<<30;
-		base=(((base >> 30)<<9)|p2_index)<<21;
-		base=(((base >> 21)<<9)|p3_index)<<12;
-		
-		uint64_t *p4=(uint64_t *)base;
-		uint64_t paddr=p4[p4_index];
-		if(paddr != marked)
+		uint64_t paddr=(get_phys_addr(vaddr_start) & 0xFFFFFFFFFFFFF000);
+		if(paddr != 0x0)
 		{
-			increment_reference_count(paddr);
-			marked=paddr;
+			if(paddr != marked)
+			{
+				increment_reference_count(paddr);
+				marked=paddr;
+			}
 		}
 		vaddr_start++;
 	}
 	
 }
 
+
 void copy_vma(PCB *proc)
 {
 	vma *last_vma=(active->mmstruct).vma_list;
 	while(last_vma != NULL)
 	{
+		//kprintf("copyiimg vma %p %p\n",last_vma->vstart, last_vma->vend);
 		vma *new_vma=alloc_vma(last_vma->vstart, last_vma->vend);
 		append_to_vma_list(proc,new_vma);
 		increment_childpg_ref(last_vma->vstart, last_vma->vend);
+		
+		uint64_t start=last_vma->vstart;
+		
+		uint64_t end=last_vma->vend;
+		
+		uint64_t marked=0;
+		
+		while(start <= end)
+		{
+			uint64_t padd=get_phys_addr(start);
+			if(padd==0 || padd==marked)
+			{
+				start++;
+				continue;
+				
+			}
+			change_ptable(proc->cr3);
+			set_Cow(start,padd);
+			
+			change_ptable(active->cr3);
+			marked=padd;
+			
+			start++;
+			
+		}
 		last_vma = last_vma->nextvma;
 	}
 }
 
 
-
-
 void cow(uint64_t addr)
 {
-	uint64_t *cow_addr=(uint64_t *)addr;
+	uint8_t *cow_addr=(uint8_t *)(addr & 0xFFFFFFFFFFFFF000);
 	
-	for(int i=0;i<512;i++)
+	//kprintf("cow addr %p\n",cow_addr);
+	
+	for(int i=0;i<4096;i++)
 		cow_page[i]=cow_addr[i];
 	
 	uint64_t p1_index = (addr << 16) >> (9 + 9 + 9 + 12 + 16);
 	uint64_t p2_index = (addr << (16 +9)) >> (9 + 9 + 12 + 16 + 9);
 	uint64_t p3_index = (addr << (16 + 9 + 9)) >> (9 + 12 + 16 + 9 + 9);
 	uint64_t p4_index = (addr << (16 + 9 + 9 + 9)) >> (12 + 16 + 9 + 9 + 9);
+	
 	
 	
 	uint64_t base=0xFFFF000000000000;
@@ -280,22 +372,37 @@ void cow(uint64_t addr)
 	uint64_t *p4=(uint64_t *)base;
 	
 	base=0xFFFF000000000000;
-
-	base=(((base >> 48)<<9)|0x1FE)<<39;
-    base=(((base >> 39)<<9)|0x1FE)<<30;
-    base=(((base >> 30)<<9)|0x1FE)<<21;
-    base=(((base >> 21)<<9)|0x1FE)<<12;
 	
-	uint64_t *p1=(uint64_t *)base;
+	__volatile__ uint64_t old_page=p4[p4_index];
 	
-	p1[p1_index]=(p1[p1_index]  & 0xFFFFFFFFFFFFF000) | 7;
+	//kprintf("decrementing for %p\n",old_page);
+    
+	if(old_page!=0x5 && old_page!=0x0)
+	{
+		
+		decrement_reference_count(old_page);
+	}
 	
 	uint64_t padd=get_page();
 	
+	//kprintf("new p4 %p\n",padd);
+	
+	//kprintf("ref count %d %d\n",get_reference_count(padd),get_reference_count(p4[p4_index]));
+
+	//remove_from_vma_list(active, (uint64_t)addr, (uint64_t)cow_addr + 4096);
+	
 	p4[p4_index]=(padd & 0xFFFFFFFFFFFFF000) | 7;
 	flushTLB();
-	for(int i=0;i<512;i++)
+	
+	//kprintf("p4 %p\n",p4[p4_index]);
+	
+	for(int i=0;i<4096;i++)
 		cow_addr[i]=cow_page[i];
+	
+	
+	//vma* seg_vma = alloc_vma(addr, addr+4096);
+		// kprintf("seg_vma [%d - %d]\n", seg_vma->vstart, seg_vma->vend);
+	//append_to_vma_list(active, seg_vma);
 	
 	return;
 	
@@ -518,14 +625,7 @@ void copy_name(PCB *proc,char *str)
 
 void init_proc()
 {
-	//all_pro=(PCB *)kmalloc(sizeof(PCB) * PROC_SIZE);
-	//
-	//char *init=(char *)all_pro;
-	//
-	//for(int i=0;i<(sizeof(PCB) * PROC_SIZE);i++)
-	//	*init='\0';
-	
-	
+
 	
 	for(int i=0;i<100;i++)
 	{
