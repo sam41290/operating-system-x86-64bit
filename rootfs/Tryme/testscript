@@ -1,3 +1,7 @@
 #!rootfs/bin/sbush
 cat Jedi.txt
+ls
+ps
+ls
+echo Script
 

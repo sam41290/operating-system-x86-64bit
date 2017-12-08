@@ -117,7 +117,7 @@ int Execute(char *cmd, char** vector, int vecCount)
                                                         if(c=='\n')
                                                         {
                                                                 cmd[k-1]='\0';
-                                                                puts("I am here--");puts(cmd);
+                                                                // puts("I am here--");puts(cmd);
                                                                 if(t==0 && k>0)
                                                                 {
                                                                         LOGG("executing command:%s\n");LOGG(cmd);
@@ -245,6 +245,7 @@ int ExecuteAbsBinary(char *cmd, char** vector, int vecCount){
                                                 LOGG("executing command:%s\n");LOGG(cmd);
                                                 int vecCount2;
                                                 char** vector2 = SplitString(getargs(cmd), &vecCount2);
+                                                // puts(cmd);
                                                 Execute(cmd, vector2, vecCount2);//replace with correct function
                                         }
 
