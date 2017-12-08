@@ -1,0 +1,11 @@
+Commands which can be tested: All examples inside rootfs folder
+
+1) ls
+2) cd Path
+3) cd ..
+4) ps
+5) kill
+6) ./shellscript
+7) cat File.txt
+8) echo
+9) sleep - works through code
