@@ -8,6 +8,7 @@ void key_fptr();
 void page_fault(void);
 void page_fault2(void);
 void _syscall();
+void zero_excep();
 
 // void (*fun_ptr)()=&isr_wrapper;
 void (*keyboard)()=&key_fptr;
@@ -15,9 +16,20 @@ void (*timer)()=&timer_fptr;
 void (*pagefault)()=&page_fault;
 void (*pagefault2)()=&page_fault2;
 void (*_sys_call)()=&_syscall;
+void (*_zero_excep)()=&zero_excep;
 
 void init_idt()
 {
+	
+	{
+        IDT[0].offset_1= (uint64_t)_zero_excep & (uint64_t)0xFFFF;
+        IDT[0].offset_2= (uint64_t)(_zero_excep)>>16 & (uint64_t)0xFFFF;
+        IDT[0].offset_3= (uint64_t)_zero_excep>>32 & (uint64_t)0xFFFFFFFF;
+        IDT[0].ist=0;
+        IDT[0].zero=0;
+        IDT[0].type_attr=(uint8_t)0x8E;
+        IDT[0].selector=8;
+    }
 
 	//PAGE FAULT
 	{

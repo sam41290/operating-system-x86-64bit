@@ -13,6 +13,13 @@ extern uint64_t RING_0_MODE;
 
 struct terminal terminal_for_keyboard;
 
+void divide_by_zero()
+{
+	kprintf("Error:Divide by zero exception\n");
+	return;
+}
+
+
 void sys_call(gpr_t *reg)
 {
 	RING_0_MODE=1;
